@@ -1,0 +1,21 @@
+{
+  "name": "inline-choice-nested",
+  "about": "중첩 선택지와 빈 보기. 노드 번호는 전위 순회.",
+  "covers": ["choice"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {"root00000000": {"schema": 1, "items": [{"id": "i001", "text": "{a|{b|c}} and {x|y|}, {{z}}"}]}}
+  },
+  "runs": [
+    {"seed": "0", "text": "c and x, z"},
+    {"seed": "1", "text": "a and x, z"},
+    {"seed": "2", "text": "a and , z"},
+    {"seed": "3", "text": "a and x, z"},
+    {"seed": "4", "text": "a and , z"},
+    {"seed": "5", "text": "b and , z"},
+    {"seed": "6", "text": "b and y, z"},
+    {"seed": "7", "text": "c and y, z"}
+  ]
+}

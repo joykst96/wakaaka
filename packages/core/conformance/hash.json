@@ -1,0 +1,114 @@
+{
+  "about": "내용 해시 테스트 벡터. 명세: docs/SPEC.md 7절. input은 JSON 원문(직접 파싱한다). jcs는 손으로 쓴 정규화 결과, base62의 앞 5개 out도 손으로 썼다. 빈 문자열은 tools/hashvec.py --update가 채우고 손으로 쓴 값은 덮어쓰지 않는다.",
+  "base62": [
+    {
+      "name": "zero",
+      "in": "0000000000000000000000000000000000000000000000000000000000000000",
+      "out": "0000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "one",
+      "in": "0000000000000000000000000000000000000000000000000000000000000001",
+      "out": "0000000000000000000000000000000000000000001"
+    },
+    {
+      "name": "sixty-one",
+      "in": "000000000000000000000000000000000000000000000000000000000000003d",
+      "out": "000000000000000000000000000000000000000000z"
+    },
+    {
+      "name": "sixty-two",
+      "in": "000000000000000000000000000000000000000000000000000000000000003e",
+      "out": "0000000000000000000000000000000000000000010"
+    },
+    {
+      "name": "two-digits",
+      "in": "0000000000000000000000000000000000000000000000000000000000000a24",
+      "out": "00000000000000000000000000000000000000000fs"
+    },
+    {
+      "name": "two-pow-255",
+      "in": "8000000000000000000000000000000000000000000000000000000000000000",
+      "out": "ULrwNTJa3CHVaAVmO8lHlO4Afd3drtx651MXvhT4GuW"
+    },
+    {
+      "name": "max",
+      "in": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "out": "yhjskwdA6OZ1AL1YmHWZWm8LLG7HjnuCA2j5rOw8Xp1"
+    },
+    {
+      "name": "sha256-empty",
+      "in": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "out": "rzWtdMwJelxEeMmeB0EiiEGkAYggupnSUjWEepHLxI5"
+    }
+  ],
+  "jcs": [
+    {
+      "name": "key-order-ascii",
+      "input": "{\"b\":1,\"a\":2,\"A\":3,\"_\":4,\"aa\":5,\"\":6}",
+      "out": "{\"\":6,\"A\":3,\"_\":4,\"a\":2,\"aa\":5,\"b\":1}"
+    },
+    {
+      "name": "key-order-utf16-not-codepoint",
+      "input": "{\"\\ue000\":1,\"\\ud83d\\ude00\":2,\"é\":3,\"z\":4}",
+      "out": "{\"z\":4,\"é\":3,\"😀\":2,\"\":1}"
+    },
+    {
+      "name": "string-escapes",
+      "input": "[\"\\u0000\\u0001\\b\\f\\n\\r\\t\\u001f\\\"\\\\\\/\\u007f\\u2028한😀\\u00e9\"]",
+      "out": "[\"\\u0000\\u0001\\b\\f\\n\\r\\t\\u001f\\\"\\\\/ 한😀é\"]"
+    },
+    {
+      "name": "numbers",
+      "input": "[0,-0,1,3.0,1e2,1E0,1000000,-5,0.0,-0.0]",
+      "out": "[0,0,1,3,100,1,1000000,-5,0,0]"
+    },
+    {
+      "name": "nested-empty-literals",
+      "input": "{\"x\":[],\"y\":{},\"z\":[{\"b\":true,\"a\":false},null]}",
+      "out": "{\"x\":[],\"y\":{},\"z\":[{\"a\":false,\"b\":true},null]}"
+    },
+    {
+      "name": "whitespace",
+      "input": " \t{ \"a\" : [ 1 , 2 ] ,\r\n\"b\":\"c d\" }\n",
+      "out": "{\"a\":[1,2],\"b\":\"c d\"}"
+    }
+  ],
+  "hash": [
+    {
+      "name": "minimal",
+      "input": "{\"schema\":1,\"items\":[]}",
+      "jcs": "{\"items\":[],\"schema\":1}",
+      "sha256": "a9b041da51d5c4e20e92ef47edc8f6fdd5976d02a261d6fe5980e9c270268ca4",
+      "out": "eEmIRXu4YX4a"
+    },
+    {
+      "name": "defaults-written-differ",
+      "input": "{\"schema\":1,\"select\":{\"count\":[1,1],\"sep\":\", \"},\"items\":[]}",
+      "jcs": "{\"items\":[],\"schema\":1,\"select\":{\"count\":[1,1],\"sep\":\", \"}}",
+      "sha256": "f1e40ce8a25c6d42e07c77152f1b0bd75a9faa8a5851540b2830dab56ed0cc03",
+      "out": "vMIvqCJi5D3k"
+    },
+    {
+      "name": "design-example",
+      "input": "{\"schema\":1,\"name\":\"hair color\",\"description\":\"기본 머리색 풀\",\"select\":{\"count\":[1,1],\"sep\":\", \"},\"items\":[{\"id\":\"i7Kq\",\"text\":\"red hair\",\"w\":3},{\"id\":\"p2Za\",\"text\":\"silver hair, ${w:hairColor001} streaks, {smile|grin}\"},{\"id\":\"Hh40\",\"ref\":{\"wildcard\":\"eyeColor0001\"},\"spread\":false,\"w\":2},{\"id\":\"Qm8c\",\"ref\":{\"wildcard\":\"outfitPool01\"},\"spread\":true}]}",
+      "jcs": "{\"description\":\"기본 머리색 풀\",\"items\":[{\"id\":\"i7Kq\",\"text\":\"red hair\",\"w\":3},{\"id\":\"p2Za\",\"text\":\"silver hair, ${w:hairColor001} streaks, {smile|grin}\"},{\"id\":\"Hh40\",\"ref\":{\"wildcard\":\"eyeColor0001\"},\"spread\":false,\"w\":2},{\"id\":\"Qm8c\",\"ref\":{\"wildcard\":\"outfitPool01\"},\"spread\":true}],\"name\":\"hair color\",\"schema\":1,\"select\":{\"count\":[1,1],\"sep\":\", \"}}",
+      "sha256": "a2c4d7d61d2fde7402941cdeafde916b19f0e12ad8b921ea924bf36744fe5f8a",
+      "out": "cb2se0dJWtqp"
+    },
+    {
+      "name": "design-example-reordered",
+      "input": "{\n  \"items\": [\n    {\"w\": 3.0, \"text\": \"red hair\", \"id\": \"i7Kq\"},\n    {\"text\": \"silver hair, ${w:hairColor001} streaks, {smile|grin}\", \"id\": \"p2Za\"},\n    {\"w\": 2, \"spread\": false, \"ref\": {\"wildcard\": \"eyeColor0001\"}, \"id\": \"Hh40\"},\n    {\"spread\": true, \"id\": \"Qm8c\", \"ref\": {\"wildcard\": \"outfitPool01\"}}\n  ],\n  \"select\": {\"sep\": \", \", \"count\": [1, 1.0]},\n  \"description\": \"\\uae30\\ubcf8 머리색 풀\",\n  \"schema\": 1e0,\n  \"name\": \"hair color\"\n}\n",
+      "jcs": "{\"description\":\"기본 머리색 풀\",\"items\":[{\"id\":\"i7Kq\",\"text\":\"red hair\",\"w\":3},{\"id\":\"p2Za\",\"text\":\"silver hair, ${w:hairColor001} streaks, {smile|grin}\"},{\"id\":\"Hh40\",\"ref\":{\"wildcard\":\"eyeColor0001\"},\"spread\":false,\"w\":2},{\"id\":\"Qm8c\",\"ref\":{\"wildcard\":\"outfitPool01\"},\"spread\":true}],\"name\":\"hair color\",\"schema\":1,\"select\":{\"count\":[1,1],\"sep\":\", \"}}",
+      "sha256": "a2c4d7d61d2fde7402941cdeafde916b19f0e12ad8b921ea924bf36744fe5f8a",
+      "out": "cb2se0dJWtqp"
+    },
+    {
+      "name": "escapes-and-unicode",
+      "input": "{\"schema\":1,\"items\":[{\"id\":\"e1\",\"text\":\"\\\\{a\\\\} \\\\\\\\ \\\\( \\\"q\\\" \\t|\\n한 😀  x\\r\"}]}",
+      "jcs": "{\"items\":[{\"id\":\"e1\",\"text\":\"\\\\{a\\\\} \\\\\\\\ \\\\( \\\"q\\\" \\t|\\n한 😀  x\\r\"}],\"schema\":1}",
+      "sha256": "8a8544916899ee3749ec793a017b6ecd84ce29b87c85e44cdb40f0a680e22dfe",
+      "out": "WqXlrQBGYuJZ"
+    }
+  ]
+}

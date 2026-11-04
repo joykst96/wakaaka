@@ -1,0 +1,17 @@
+{
+  "name": "novelai-emphasis",
+  "about": "붙여 넣은 NovelAI 강조는 괄호가 사라진다.",
+  "covers": ["choice"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "{{{masterpiece}}}, {{best quality}}, {highres}"}]}
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "masterpiece, best quality, highres"},
+    {"seed": "7", "text": "masterpiece, best quality, highres"}
+  ]
+}

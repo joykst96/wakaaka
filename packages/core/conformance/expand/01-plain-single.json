@@ -1,0 +1,16 @@
+{
+  "name": "plain-single",
+  "about": "항목 하나, 문법 없음. 어떤 seed든 그대로 나온다.",
+  "covers": ["basic"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {"root00000000": {"schema": 1, "items": [{"id": "i001", "text": "red hair, smile"}]}}
+  },
+  "runs": [
+    {"seed": "0", "text": "red hair, smile"},
+    {"seed": "1", "text": "red hair, smile"},
+    {"seed": "18446744073709551615", "text": "red hair, smile"}
+  ]
+}

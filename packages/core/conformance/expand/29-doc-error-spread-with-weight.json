@@ -1,0 +1,23 @@
+{
+  "name": "doc-error-spread-with-weight",
+  "about": "spread 항목에 w가 있으면 E_DOC.",
+  "covers": ["error", "spread"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WcolorPool10": "colorPoolV01"},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "sp01", "ref": {"wildcard": "WcolorPool10"}, "spread": true, "w": 2}]},
+      "colorPoolV01": {
+        "schema": 1,
+        "select": {"count": [2, 2], "sep": " + "},
+        "items": [
+          {"id": "c001", "text": "red"},
+          {"id": "c002", "text": "blue", "w": 2},
+          {"id": "c003", "text": "green"}
+        ]
+      }
+    }
+  },
+  "runs": [{"seed": "0", "error": "E_DOC"}]
+}

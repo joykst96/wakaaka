@@ -1,0 +1,30 @@
+{
+  "name": "spread-counts-budget",
+  "about": "maxExpansions 3. 문서 전개 1 + spread 펼치기 2(겹친 spread도 한 번씩) = 3. 펼친 후보 중 참조 항목(b002)이 뽑히면 4번째라 E_BUDGET, 다른 항목은 통과한다. spread 펼치기를 세지 않거나 한 겹만 세면 b002 seed가 통과해 버린다.",
+  "covers": ["spread", "budget", "limits", "error"],
+  "limits": {"maxExpansions": 3},
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WspreadA0000": "spreadA00001", "WspreadB0000": "spreadB00001", "Wleaf0000000": "leaf00000001"},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "sp01", "ref": {"wildcard": "WspreadA0000"}, "spread": true}]},
+      "spreadA00001": {
+        "schema": 1,
+        "items": [{"id": "a001", "text": "x"}, {"id": "sp02", "ref": {"wildcard": "WspreadB0000"}, "spread": true}]
+      },
+      "spreadB00001": {"schema": 1, "items": [{"id": "b001", "text": "y"}, {"id": "b002", "text": "${w:Wleaf0000000}"}]},
+      "leaf00000001": {"schema": 1, "items": [{"id": "l001", "text": "z"}]}
+    }
+  },
+  "runs": [
+    {"seed": "0", "error": "E_BUDGET"},
+    {"seed": "1", "text": "y"},
+    {"seed": "2", "text": "x"},
+    {"seed": "3", "text": "x"},
+    {"seed": "4", "error": "E_BUDGET"},
+    {"seed": "5", "text": "x"},
+    {"seed": "6", "text": "x"},
+    {"seed": "7", "error": "E_BUDGET"}
+  ]
+}

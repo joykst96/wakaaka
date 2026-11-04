@@ -1,0 +1,123 @@
+{
+  "name": "scene-preset",
+  "about": "장면 프리셋: 품질 태그 + 캐릭터 풀(미쿠 세트 = 미쿠 + 가져온 미쿠 의상) + 머리색 spread + 배경. 조건부 뽑기를 조합으로 표현한 예.",
+  "covers": ["realistic", "ref-mine", "spread", "ref-item"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {
+      "WbgColors010": "bgColorsV001",
+      "WbgPool00010": "bgPoolV00001",
+      "WcharPool010": "charPoolV005",
+      "WhairColor00": "hairColorV03",
+      "WmikuOutfitV": "mikuOutfitV1",
+      "WmikuSet0010": "mikuSetV0003",
+      "WqualityTag1": "qualityV0002"
+    },
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "name": "scene preset",
+        "items": [{"id": "s001", "text": "${w:WqualityTag1}, ${w:WcharPool010}, ${w:WbgPool00010}"}]
+      },
+      "qualityV0002": {
+        "schema": 1,
+        "name": "quality",
+        "select": {"count": [3, 3]},
+        "items": [
+          {"id": "q001", "text": "masterpiece"},
+          {"id": "q002", "text": "best quality"},
+          {"id": "q003", "text": "absurdres"}
+        ]
+      },
+      "charPoolV005": {
+        "schema": 1,
+        "name": "character",
+        "items": [
+          {"id": "c001", "ref": {"wildcard": "WmikuSet0010"}, "w": 2},
+          {"id": "c002", "text": "1girl, ${w:WhairColor00} hair, {long|short} hair"},
+          {"id": "c003", "text": "1boy, {black|brown} hair", "w": 1}
+        ]
+      },
+      "mikuSetV0003": {
+        "schema": 1,
+        "name": "miku set",
+        "items": [{"id": "m001", "text": "hatsune miku, twintails, ${w:WmikuOutfitV}"}]
+      },
+      "mikuOutfitV1": {
+        "schema": 1,
+        "name": "miku outfit (남의 것)",
+        "items": [
+          {"id": "o001", "text": "{school uniform|sailor collar}"},
+          {"id": "o002", "text": "detached sleeves, necktie", "w": 3}
+        ]
+      },
+      "hairColorV03": {
+        "schema": 1,
+        "name": "hair color",
+        "items": [
+          {"id": "c001", "text": "red"},
+          {"id": "c002", "text": "blue", "w": 2},
+          {"id": "c003", "text": "silver"}
+        ]
+      },
+      "bgPoolV00001": {
+        "schema": 1,
+        "name": "background",
+        "select": {"count": [1, 2], "sep": ", "},
+        "items": [
+          {"id": "b001", "text": "outdoors, {city|park|beach}"},
+          {"id": "b002", "text": "indoors, classroom"},
+          {"id": "b003", "ref": {"wildcard": "WbgColors010"}, "spread": true}
+        ]
+      },
+      "bgColorsV001": {
+        "schema": 1,
+        "items": [{"id": "c001", "text": "{red|blue} background"}, {"id": "c002", "text": "simple background"}]
+      }
+    }
+  },
+  "runs": [
+    {
+      "seed": "0",
+      "text": "absurdres, masterpiece, best quality, hatsune miku, twintails, school uniform, simple background"
+    },
+    {
+      "seed": "1",
+      "text": "absurdres, masterpiece, best quality, hatsune miku, twintails, detached sleeves, necktie, blue background, simple background"
+    },
+    {
+      "seed": "2",
+      "text": "best quality, absurdres, masterpiece, 1girl, red hair, short hair, indoors, classroom, simple background"
+    },
+    {
+      "seed": "3",
+      "text": "masterpiece, absurdres, best quality, hatsune miku, twintails, sailor collar, simple background, red background"
+    },
+    {
+      "seed": "4",
+      "text": "masterpiece, best quality, absurdres, hatsune miku, twintails, detached sleeves, necktie, simple background"
+    },
+    {
+      "seed": "5",
+      "text": "best quality, masterpiece, absurdres, hatsune miku, twintails, detached sleeves, necktie, simple background, blue background"
+    },
+    {
+      "seed": "6",
+      "text": "absurdres, masterpiece, best quality, hatsune miku, twintails, detached sleeves, necktie, blue background"
+    },
+    {"seed": "7", "text": "best quality, masterpiece, absurdres, 1boy, black hair, red background"},
+    {
+      "seed": "8",
+      "text": "masterpiece, absurdres, best quality, hatsune miku, twintails, detached sleeves, necktie, simple background, indoors, classroom"
+    },
+    {
+      "seed": "9",
+      "text": "absurdres, masterpiece, best quality, 1girl, blue hair, short hair, blue background"
+    },
+    {
+      "seed": "18446744073709551615",
+      "text": "best quality, absurdres, masterpiece, hatsune miku, twintails, detached sleeves, necktie, simple background, blue background"
+    }
+  ]
+}

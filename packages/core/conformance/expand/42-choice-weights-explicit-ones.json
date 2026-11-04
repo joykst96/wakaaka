@@ -1,0 +1,23 @@
+{
+  "name": "choice-weights-explicit-ones",
+  "about": "08과 같은 문서에 모든 보기 가중치 1을 적었다. SPEC 4.3 성질 5: 결과가 08과 같아야 한다. 기대 출력은 08에서 옮겼다(손으로).",
+  "covers": ["choice", "choice-weight"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "{1*a|1*{1*b|1*c}} and {1*x|1*y|1*}, {1*{1*z}}"}]}
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "c and x, z"},
+    {"seed": "1", "text": "a and x, z"},
+    {"seed": "2", "text": "a and , z"},
+    {"seed": "3", "text": "a and x, z"},
+    {"seed": "4", "text": "a and , z"},
+    {"seed": "5", "text": "b and , z"},
+    {"seed": "6", "text": "b and y, z"},
+    {"seed": "7", "text": "c and y, z"}
+  ]
+}

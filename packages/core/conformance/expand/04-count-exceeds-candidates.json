@@ -1,0 +1,27 @@
+{
+  "name": "count-exceeds-candidates",
+  "about": "count [5,5]인데 w>0인 후보가 2개 → 2개만 나온다.",
+  "covers": ["count", "weights"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "select": {"count": [5, 5]},
+        "items": [
+          {"id": "a001", "text": "hat"},
+          {"id": "a002", "text": "scarf", "w": 0},
+          {"id": "a003", "text": "glasses"}
+        ]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "hat, glasses"},
+    {"seed": "1", "text": "glasses, hat"},
+    {"seed": "2", "text": "hat, glasses"},
+    {"seed": "3", "text": "hat, glasses"}
+  ]
+}

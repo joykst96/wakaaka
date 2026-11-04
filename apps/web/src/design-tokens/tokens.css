@@ -1,0 +1,4 @@
+/* 토큰 3층 한 번에 불러오기. 순서가 곧 참조 방향이다(1 → 2 → 3). */
+@import url("tokens/1-primitives.css");
+@import url("tokens/2-semantic.css");
+@import url("tokens/3-components.css");

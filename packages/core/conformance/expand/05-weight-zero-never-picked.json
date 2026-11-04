@@ -1,0 +1,21 @@
+{
+  "name": "weight-zero-never-picked",
+  "about": "w=0 항목은 뽑히지 않는다.",
+  "covers": ["weights"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "a001", "text": "never", "w": 0}, {"id": "a002", "text": "always"}]}
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "always"},
+    {"seed": "1", "text": "always"},
+    {"seed": "2", "text": "always"},
+    {"seed": "3", "text": "always"},
+    {"seed": "4", "text": "always"},
+    {"seed": "5", "text": "always"}
+  ]
+}

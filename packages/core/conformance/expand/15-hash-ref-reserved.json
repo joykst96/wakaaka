@@ -1,0 +1,15 @@
+{
+  "name": "hash-ref-reserved",
+  "about": "문서 안의 해시 참조 ${h:…}는 없앴고 h: 접두사는 예약이다. 사전 검사에서 E_REF_RESERVED.",
+  "covers": ["error", "syntax"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "1girl, ${h:Snap00000001}"}]},
+      "Snap00000001": {"schema": 1, "items": [{"id": "a001", "text": "dress"}]}
+    }
+  },
+  "runs": [{"seed": "0", "error": "E_REF_RESERVED"}]
+}

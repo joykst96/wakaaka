@@ -1,0 +1,33 @@
+{
+  "name": "nested-wildcard-refs",
+  "about": "가져온 복사본처럼 하위 참조가 여러 단계인 경우. 하위 문서의 참조도 같은 lock으로 찾는다.",
+  "covers": ["ref-mine"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WsnapColor00": "snapColor001", "WsnapOutfit0": "snapOutfit01"},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "1girl, ${w:WsnapOutfit0}"}]},
+      "snapOutfit01": {
+        "schema": 1,
+        "name": "outfit (남의 것)",
+        "items": [
+          {"id": "o001", "text": "${w:WsnapColor00} dress"},
+          {"id": "o002", "text": "${w:WsnapColor00} kimono"}
+        ]
+      },
+      "snapColor001": {
+        "schema": 1,
+        "items": [{"id": "k001", "text": "black"}, {"id": "k002", "text": "white"}, {"id": "k003", "text": "red"}]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "1girl, black kimono"},
+    {"seed": "1", "text": "1girl, red dress"},
+    {"seed": "2", "text": "1girl, white kimono"},
+    {"seed": "3", "text": "1girl, red dress"},
+    {"seed": "4", "text": "1girl, black kimono"},
+    {"seed": "5", "text": "1girl, white dress"}
+  ]
+}

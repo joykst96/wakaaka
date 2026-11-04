@@ -1,0 +1,21 @@
+{
+  "name": "depth-checked-before-expansion",
+  "about": "maxDepth 2. 깊은 쪽 보기가 뽑히지 않는 seed에서도 E_DEPTH(사전 검사).",
+  "covers": ["depth", "error", "limits"],
+  "limits": {"maxDepth": 2},
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"Wdeep0100000": "deep01000000", "Wdeep0200000": "deep02000000", "Wdeep0300000": "deep03000000"},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "items": [{"id": "i001", "text": "shallow"}, {"id": "i002", "text": "${w:Wdeep0100000}", "w": 0}]
+      },
+      "deep01000000": {"schema": 1, "items": [{"id": "x", "text": "${w:Wdeep0200000}"}]},
+      "deep02000000": {"schema": 1, "items": [{"id": "x", "text": "${w:Wdeep0300000}"}]},
+      "deep03000000": {"schema": 1, "items": [{"id": "x", "text": "bottom"}]}
+    }
+  },
+  "runs": [{"seed": "0", "error": "E_DEPTH"}, {"seed": "1", "error": "E_DEPTH"}, {"seed": "2", "error": "E_DEPTH"}]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "unresolved-lock-entry",
+  "about": "lock에 없는 ${w:}는 뽑히지 않는 보기 안에 있어도 E_UNRESOLVED.",
+  "covers": ["error", "lock"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {"root00000000": {"schema": 1, "items": [{"id": "i001", "text": "{ok|${w:WmissingId10}}"}]}}
+  },
+  "runs": [{"seed": "0", "error": "E_UNRESOLVED"}, {"seed": "1", "error": "E_UNRESOLVED"}]
+}

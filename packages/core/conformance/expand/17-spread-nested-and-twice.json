@@ -1,0 +1,47 @@
+{
+  "name": "spread-nested-and-twice",
+  "about": "spread 대상 안의 spread도 펼친다. 같은 문서를 두 spread 항목으로 펼치면 key가 달라 별개 후보가 된다.",
+  "covers": ["spread", "diamond"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WcolorPool10": "colorPoolV01", "WwarmColorV0": "warmColorV01"},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "select": {"count": [3, 4]},
+        "items": [
+          {"id": "sp01", "ref": {"wildcard": "WcolorPool10"}, "spread": true},
+          {"id": "sp02", "ref": {"wildcard": "WcolorPool10"}, "spread": true},
+          {"id": "sp03", "ref": {"wildcard": "WwarmColorV0"}, "spread": true}
+        ]
+      },
+      "colorPoolV01": {
+        "schema": 1,
+        "select": {"count": [2, 2], "sep": " + "},
+        "items": [
+          {"id": "c001", "text": "red"},
+          {"id": "c002", "text": "blue", "w": 2},
+          {"id": "c003", "text": "green"}
+        ]
+      },
+      "warmColorV01": {
+        "schema": 1,
+        "items": [
+          {"id": "w001", "text": "orange"},
+          {"id": "w002", "ref": {"wildcard": "WcolorPool10"}, "spread": true}
+        ]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "green, blue, blue"},
+    {"seed": "1", "text": "green, green, blue, orange"},
+    {"seed": "2", "text": "blue, orange, blue, green"},
+    {"seed": "3", "text": "red, orange, blue, blue"},
+    {"seed": "4", "text": "orange, blue, green, blue"},
+    {"seed": "5", "text": "red, blue, green"},
+    {"seed": "6", "text": "red, red, blue, blue"},
+    {"seed": "7", "text": "green, blue, red, blue"}
+  ]
+}

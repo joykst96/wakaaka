@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+fixtures/out/
+
+__pycache__/
+*.pyc
+.venv/
+
+.DS_Store
+Thumbs.db
+
+# 개인 작업 파일 (로컬에만 둔다)
+CLAUDE.md
+.claude/
+docs/NOTES.md
+deploy/local.env

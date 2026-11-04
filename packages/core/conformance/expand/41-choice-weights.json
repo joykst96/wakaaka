@@ -1,0 +1,29 @@
+{
+  "name": "choice-weights",
+  "about": "보기 가중치 3:1:0. gold는 가중치 0이라 나오지 않는다. 기대 출력은 참조 모델(Phase 3 가중치 문법 반영)이 채웠다.",
+  "covers": ["choice", "choice-weight"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {"root00000000": {"schema": 1, "items": [{"id": "i001", "text": "{3*silver|1*platinum|0*gold} hair"}]}}
+  },
+  "runs": [
+    {"seed": "0", "text": "silver hair"},
+    {"seed": "1", "text": "silver hair"},
+    {"seed": "2", "text": "silver hair"},
+    {"seed": "3", "text": "silver hair"},
+    {"seed": "4", "text": "silver hair"},
+    {"seed": "5", "text": "platinum hair"},
+    {"seed": "6", "text": "silver hair"},
+    {"seed": "7", "text": "platinum hair"},
+    {"seed": "8", "text": "silver hair"},
+    {"seed": "9", "text": "platinum hair"},
+    {"seed": "10", "text": "silver hair"},
+    {"seed": "11", "text": "silver hair"},
+    {"seed": "12", "text": "platinum hair"},
+    {"seed": "13", "text": "platinum hair"},
+    {"seed": "14", "text": "platinum hair"},
+    {"seed": "15", "text": "silver hair"}
+  ]
+}

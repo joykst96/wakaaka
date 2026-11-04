@@ -1,0 +1,39 @@
+{
+  "name": "spread-basic",
+  "about": "spread는 대상의 항목을 이 풀에 펼친다. 대상의 count와 sep은 무시하고 자기 w를 쓴다.",
+  "covers": ["spread"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WcolorPool10": "colorPoolV01"},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "select": {"count": [2, 2]},
+        "items": [
+          {"id": "m001", "text": "white", "w": 4},
+          {"id": "sp01", "ref": {"wildcard": "WcolorPool10"}, "spread": true}
+        ]
+      },
+      "colorPoolV01": {
+        "schema": 1,
+        "select": {"count": [2, 2], "sep": " + "},
+        "items": [
+          {"id": "c001", "text": "red"},
+          {"id": "c002", "text": "blue", "w": 2},
+          {"id": "c003", "text": "green"}
+        ]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "white, red"},
+    {"seed": "1", "text": "green, white"},
+    {"seed": "2", "text": "red, white"},
+    {"seed": "3", "text": "red, white"},
+    {"seed": "4", "text": "white, blue"},
+    {"seed": "5", "text": "white, blue"},
+    {"seed": "6", "text": "blue, red"},
+    {"seed": "7", "text": "blue, red"}
+  ]
+}

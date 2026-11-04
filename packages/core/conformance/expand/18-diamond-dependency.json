@@ -1,0 +1,26 @@
+{
+  "name": "diamond-dependency",
+  "about": "루트 → A, B → 둘 다 C. C는 묶음에 한 번만 있고, 두 자리에서 각자 뽑는다.",
+  "covers": ["diamond", "ref-mine"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WdiamondA000": "diamondA0001", "WdiamondB000": "diamondB0001", "WdiamondC000": "diamondC0001"},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "${w:WdiamondA000}; ${w:WdiamondB000}"}]},
+      "diamondA0001": {"schema": 1, "items": [{"id": "a001", "text": "A(${w:WdiamondC000})"}]},
+      "diamondB0001": {"schema": 1, "items": [{"id": "b001", "text": "B(${w:WdiamondC000})"}]},
+      "diamondC0001": {"schema": 1, "items": [{"id": "c001", "text": "{x|y|z}"}, {"id": "c002", "text": "q"}]}
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "A(z); B(y)"},
+    {"seed": "1", "text": "A(q); B(x)"},
+    {"seed": "2", "text": "A(x); B(x)"},
+    {"seed": "3", "text": "A(y); B(q)"},
+    {"seed": "4", "text": "A(y); B(x)"},
+    {"seed": "5", "text": "A(z); B(z)"},
+    {"seed": "6", "text": "A(q); B(q)"},
+    {"seed": "7", "text": "A(x); B(z)"}
+  ]
+}

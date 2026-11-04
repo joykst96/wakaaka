@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Design Tokens</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      /* 이 페이지 전용 배치 — 역시 토큰만 사용 */
+      .wrap {
+        max-width: var(--layout-max-width);
+        margin: 0 auto;
+        padding: var(--layout-page-padding-y) var(--layout-page-padding-x);
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--gap-lg);
+        margin-bottom: var(--gap-2xl);
+      }
+      header h1 {
+        flex: 1;
+        margin: 0;
+        font: var(--font-title);
+      }
+      header p {
+        flex-basis: 100%;
+        margin: 0;
+        font: var(--font-subtitle);
+        color: var(--color-fg-muted);
+      }
+      section {
+        margin-bottom: var(--gap-2xl);
+      }
+      h2 {
+        margin: 0 0 var(--gap-lg);
+        font: var(--font-overline);
+        letter-spacing: var(--letter-spacing-overline);
+        text-transform: uppercase;
+        color: var(--color-fg-muted);
+      }
+      h3 {
+        margin: 0 0 var(--gap-md);
+        font: var(--font-heading);
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--size-sidebar)), 1fr));
+        gap: var(--layout-gap);
+      }
+      .theme-col {
+        padding: var(--inset-lg);
+        border: var(--border-width-thin) solid var(--color-border);
+        border-radius: var(--panel-radius);
+        background: var(--color-bg);
+        color: var(--color-fg);
+      }
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(var(--space-16), 1fr));
+        gap: var(--gap-md);
+      }
+      .swatch {
+        font: var(--font-caption);
+        color: var(--color-fg-muted);
+        min-width: 0;
+      }
+      .swatch i {
+        display: block;
+        height: var(--space-10);
+        margin-bottom: var(--gap-xs);
+        border: var(--border-width-thin) solid var(--color-border);
+        border-radius: var(--radius-md);
+      }
+      .swatch b {
+        display: block;
+        color: var(--color-fg);
+        font-weight: var(--font-weight-semibold);
+        overflow-wrap: anywhere;
+      }
+      .rows {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-sm);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: var(--gap-lg);
+        min-width: 0;
+      }
+      .row code {
+        flex: 0 0 auto;
+        width: 11rem;
+        font: var(--font-code);
+        color: var(--color-fg-muted);
+        overflow-wrap: anywhere;
+      }
+      .bar-sample {
+        height: var(--space-3);
+        background: var(--color-accent);
+        border-radius: var(--radius-xs);
+      }
+      .radius-sample {
+        width: var(--space-12);
+        height: var(--space-8);
+        border: var(--border-width-thick) solid var(--color-accent);
+        background: var(--color-accent-subtle);
+      }
+      .demo {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-xl);
+      }
+      .inline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--gap-md);
+      }
+      .model-row {
+        display: flex;
+        gap: var(--gap-sm);
+        align-items: stretch;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font: var(--font-body-sm);
+      }
+      th,
+      td {
+        padding: var(--space-1_5) var(--space-2);
+        border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+        text-align: left;
+        vertical-align: middle;
+      }
+      th {
+        color: var(--color-fg-muted);
+        font-weight: var(--font-weight-semibold);
+      }
+      td.num {
+        font-variant-numeric: tabular-nums;
+      }
+      .pair {
+        display: inline-block;
+        padding: var(--space-0_5) var(--space-2);
+        border-radius: var(--radius-sm);
+        font-weight: var(--font-weight-semibold);
+      }
+      .table-scroll {
+        overflow-x: auto;
+      }
+      .summary {
+        margin: 0 0 var(--gap-lg);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Design Tokens</h1>
+        <div class="inline">
+          <span class="label">테마</span>
+          <div class="chip-group" id="themeChips">
+            <button class="chip" data-v="" aria-pressed="true">OS 자동</button>
+            <button class="chip" data-v="dark" aria-pressed="false">다크</button>
+            <button class="chip" data-v="light" aria-pressed="false">라이트</button>
+          </div>
+          <span class="label">밀도</span>
+          <div class="chip-group" id="densityChips">
+            <button class="chip" data-v="compact" aria-pressed="false">촘촘</button>
+            <button class="chip" data-v="" aria-pressed="true">기본</button>
+            <button class="chip" data-v="comfortable" aria-pressed="false">여유</button>
+          </div>
+        </div>
+        <p>원시값(1층) → 역할(2층) → 컴포넌트(3층). 아래 화면은 모두 토큰만으로 그려졌고, 대비 표는 브라우저가 실제로 계산한 값입니다.</p>
+      </header>
+
+      <section>
+        <h2>대비 검사 (WCAG)</h2>
+        <p class="summary" id="contrastSummary">계산 중…</p>
+        <div class="cols">
+          <div class="theme-col" data-theme="dark"><h3>다크</h3><div class="table-scroll" data-contrast></div></div>
+          <div class="theme-col" data-theme="light"><h3>라이트</h3><div class="table-scroll" data-contrast></div></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>컴포넌트 — 같은 마크업, 하위 트리에 data-theme만 다름</h2>
+        <div class="cols">
+          <div class="theme-col" data-theme="dark"></div>
+          <div class="theme-col" data-theme="light"></div>
+        </div>
+        <template id="demoTpl">
+          <div class="demo">
+            <div class="panel">
+              <h4 class="panel-title">프롬프트</h4>
+              <div class="field">
+                <label class="label">모델</label>
+                <div class="model-row">
+                  <select class="input"><option>Anima Base</option></select>
+                  <button class="icon-btn" type="button" aria-label="고급 옵션">⚙</button>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">프롬프트</label>
+                <textarea class="input" placeholder="1girl, solo, …"></textarea>
+              </div>
+              <div class="field">
+                <label class="label">비율</label>
+                <div class="chip-group">
+                  <button class="chip" aria-pressed="true">1:1</button>
+                  <button class="chip" aria-pressed="false">3:4</button>
+                  <button class="chip" aria-pressed="false">16:9</button>
+                </div>
+              </div>
+              <div class="field">
+                <button class="btn btn-block">생성</button>
+                <div class="progress"><span style="width: 62%"></span></div>
+              </div>
+            </div>
+            <div class="inline">
+              <button class="btn btn-sm">기본</button>
+              <button class="btn btn-sm btn-secondary">보조</button>
+              <button class="btn btn-sm btn-ghost">고스트</button>
+              <button class="btn btn-sm btn-danger">삭제</button>
+              <button class="btn btn-sm" disabled>비활성</button>
+            </div>
+            <div class="inline">
+              <span class="badge">중립</span>
+              <span class="badge badge-accent">강조</span>
+              <span class="badge badge-success">정상</span>
+              <span class="badge badge-warning">주의</span>
+              <span class="badge badge-danger">오류</span>
+            </div>
+            <div class="popover">
+              <div class="popover-item" aria-selected="true">long_hair <span class="text-muted">1.2M</span></div>
+              <div class="popover-item">looking_at_viewer <span class="text-muted">980K</span></div>
+            </div>
+            <pre class="code-block"><span class="text-muted">[00:01]</span> 모델 로드 중…
+<span class="text-success">[00:04] 준비 완료</span>
+<span class="text-warning">[00:05] SPEED 모드</span>
+<span class="text-danger">[00:06] WebGPU 어댑터 없음</span></pre>
+          </div>
+        </template>
+      </section>
+
+      <section>
+        <h2>역할 색 (2층)</h2>
+        <div class="cols">
+          <div class="theme-col" data-theme="dark"><div class="swatches" data-semantic></div></div>
+          <div class="theme-col" data-theme="light"><div class="swatches" data-semantic></div></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>원시 팔레트 (1층) — 숫자 = OKLCH 명도</h2>
+        <div class="swatches" id="primitives"></div>
+      </section>
+
+      <section>
+        <h2>타이포그래피 역할</h2>
+        <div class="rows" id="type"></div>
+      </section>
+
+      <section>
+        <h2>간격 — --space-unit × 배수 (밀도 전환 시 함께 바뀜)</h2>
+        <div class="rows" id="space"></div>
+      </section>
+
+      <section>
+        <h2>라운드 — --radius-unit × 배수</h2>
+        <div class="inline" id="radius"></div>
+      </section>
+    </div>
+
+    <script>
+      const root = document.documentElement;
+
+      // ---------- 토글 ----------
+      function bindChips(id, attr) {
+        const group = document.getElementById(id);
+        group.addEventListener("click", (e) => {
+          const chip = e.target.closest(".chip");
+          if (!chip) return;
+          for (const c of group.children) c.setAttribute("aria-pressed", String(c === chip));
+          if (chip.dataset.v) root.setAttribute(attr, chip.dataset.v);
+          else root.removeAttribute(attr);
+          if (attr === "data-density") renderScales();
+        });
+      }
+      bindChips("themeChips", "data-theme");
+      bindChips("densityChips", "data-density");
+
+      // ---------- 컴포넌트 데모 복제 ----------
+      const tpl = document.getElementById("demoTpl");
+      for (const col of document.querySelectorAll("section:nth-of-type(2) .theme-col")) col.append(tpl.content.cloneNode(true));
+
+      // ---------- 정의된 토큰 이름 수집 ----------
+      // 링크된 스타일시트(@import 포함)를 훑는다. file://에서 규칙 접근이 막히면 계산된 스타일을 훑는다.
+      function tokenNames() {
+        const names = new Set();
+        const walk = (sheet) => {
+          for (const rule of sheet.cssRules) {
+            if (rule.styleSheet) walk(rule.styleSheet);
+            if (rule.cssRules) walk(rule);
+            if (rule.style) for (const p of rule.style) if (p.startsWith("--")) names.add(p);
+          }
+        };
+        try {
+          for (const s of document.styleSheets) walk(s);
+        } catch {
+          for (const p of getComputedStyle(root)) if (p.startsWith("--")) names.add(p);
+        }
+        return [...names];
+      }
+      const names = tokenNames();
+
+      // ---------- 색 → RGBA (캔버스가 oklab/color-mix 결과까지 해석) ----------
+      const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+      function rgba(css) {
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = "#000";
+        ctx.fillStyle = css;
+        ctx.fillRect(0, 0, 1, 1);
+        const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+        return [r, g, b, a / 255];
+      }
+      function resolve(scope, token) {
+        const probe = document.createElement("span");
+        probe.style.color = `var(${token})`;
+        scope.append(probe);
+        const c = getComputedStyle(probe).color;
+        probe.remove();
+        return rgba(c);
+      }
+      const over = ([r, g, b, a], [R, G, B]) => [r * a + R * (1 - a), g * a + G * (1 - a), b * a + B * (1 - a), 1];
+      const lum = ([r, g, b]) => {
+        const f = (v) => ((v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+      };
+      const ratio = (a, b) => {
+        const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+        return (x + 0.05) / (y + 0.05);
+      };
+
+      // [전경, 배경, 최소 대비, 배경 아래 깔린 표면(배경이 반투명일 때)]
+      const pairs = [
+        ["--color-fg", "--color-bg", 4.5],
+        ["--color-fg", "--color-bg-surface", 4.5],
+        ["--color-fg", "--color-bg-sunken", 4.5],
+        ["--color-fg-muted", "--color-bg", 4.5],
+        ["--color-fg-muted", "--color-bg-surface", 4.5],
+        ["--color-fg-muted", "--color-bg-sunken", 4.5],
+        ["--color-fg-subtle", "--color-bg-sunken", 3, null, "플레이스홀더 전용"],
+        ["--color-accent", "--color-bg-surface", 4.5],
+        ["--color-accent", "--color-bg-sunken", 4.5],
+        ["--color-success", "--color-bg-surface", 4.5],
+        ["--color-success", "--color-bg-sunken", 4.5],
+        ["--color-warning", "--color-bg", 4.5],
+        ["--color-warning", "--color-bg-sunken", 4.5],
+        ["--color-danger", "--color-bg-surface", 4.5],
+        ["--color-danger", "--color-bg-sunken", 4.5],
+        ...["blue", "red", "purple", "green", "orange"].flatMap((h) => [
+          [`--color-label-${h}`, "--color-bg-surface", 4.5],
+          [`--color-label-${h}`, "--color-bg-sunken", 4.5],
+          [`--color-label-${h}`, "--color-bg-selected", 4.5],
+        ]),
+        ["--color-on-accent", "--color-accent-solid", 4.5],
+        ["--color-on-accent", "--color-accent-solid-hover", 4.5],
+        ["--color-on-success", "--color-success-solid", 4.5],
+        ["--color-on-warning", "--color-warning-solid", 4.5],
+        ["--color-on-danger", "--color-danger-solid", 4.5],
+        ["--color-on-danger", "--color-danger-solid-hover", 4.5],
+        ["--color-fg", "--color-bg-muted", 4.5],
+        ["--color-fg", "--color-bg-muted-hover", 4.5],
+        ["--color-fg", "--color-bg-selected", 4.5],
+        ["--color-accent", "--color-accent-subtle", 4.5, "--color-bg-surface"],
+        ["--color-success", "--color-success-subtle", 4.5, "--color-bg-surface"],
+        ["--color-warning", "--color-warning-subtle", 4.5, "--color-bg-surface"],
+        ["--color-danger", "--color-danger-subtle", 4.5, "--color-bg-surface"],
+        ["--color-border-strong", "--color-bg-surface", 1.5, null, "장식선"],
+      ];
+      const short = (t) => t.replace("--color-", "");
+      let fails = 0, total = 0;
+      for (const host of document.querySelectorAll("[data-contrast]")) {
+        const scope = host.closest("[data-theme]");
+        const rows = pairs.map(([fg, bg, min, under, note]) => {
+          let b = resolve(scope, bg);
+          if (under) b = over(b, resolve(scope, under));
+          const f = over(resolve(scope, fg), b);
+          const r = ratio(f, b);
+          const ok = r >= min;
+          total++;
+          if (!ok) fails++;
+          const swatch = `<span class="pair" style="color:var(${fg});background:var(${bg})">가Aa</span>`;
+          return `<tr><td>${swatch}</td><td>${short(fg)}<br><span class="text-muted">on ${short(bg)}${under ? " / " + short(under) : ""}</span></td>
+            <td class="num">${r.toFixed(2)}</td><td>${ok ? '<span class="badge badge-success">통과</span>' : '<span class="badge badge-danger">미달</span>'}
+            <span class="text-muted">≥${min}${note ? " · " + note : ""}</span></td></tr>`;
+        });
+        host.innerHTML = `<table><thead><tr><th></th><th>조합</th><th>대비</th><th>판정</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+      }
+      const sum = document.getElementById("contrastSummary");
+      sum.innerHTML = fails
+        ? `<span class="badge badge-danger">미달 ${fails}</span> / ${total}개 조합`
+        : `<span class="badge badge-success">전부 통과</span> ${total}개 조합 (다크·라이트)`;
+      window.__contrast = { fails, total };
+
+      // ---------- 스와치 ----------
+      const swatch = (token, label = token) => `<div class="swatch"><i style="background:var(${token})"></i><b>${label}</b></div>`;
+      document.getElementById("primitives").innerHTML = names
+        .filter((n) => /^--(gray|blue|green|amber|red|purple|orange)-\d+$/.test(n))
+        .map((n) => swatch(n, n.slice(2)))
+        .join("");
+      const semantic = names.filter((n) => n.startsWith("--color-") && !/shadow|on-media|scrim-media/.test(n));
+      for (const host of document.querySelectorAll("[data-semantic]")) host.innerHTML = semantic.map((n) => swatch(n, short(n))).join("");
+
+      // ---------- 타이포 ----------
+      const typeRoles = names.filter((n) => n.startsWith("--font-") && !/family|size|weight/.test(n));
+      document.getElementById("type").innerHTML = typeRoles
+        .map((n) => `<div class="row"><code>${n}</code><span style="font:var(${n})">다람쥐 헌 쳇바퀴 Aa 123</span></div>`)
+        .join("");
+
+      // ---------- 간격·라운드 (밀도 바뀌면 다시 그림: 계산된 px 표시) ----------
+      function renderScales() {
+        const cs = getComputedStyle(root);
+        const px = (n) => {
+          const probe = document.createElement("div");
+          probe.style.width = `var(${n})`;
+          document.body.append(probe);
+          const w = getComputedStyle(probe).width;
+          probe.remove();
+          return w;
+        };
+        document.getElementById("space").innerHTML = names
+          .filter((n) => /^--space-\d/.test(n))
+          .map((n) => `<div class="row"><code>${n} · ${px(n)}</code><div class="bar-sample" style="width:var(${n})"></div></div>`)
+          .join("");
+        document.getElementById("radius").innerHTML = names
+          .filter((n) => /^--radius-(?!unit)/.test(n))
+          .map((n) => `<div class="swatch"><div class="radius-sample" style="border-radius:var(${n})"></div><b>${n.slice(9)}</b></div>`)
+          .join("");
+      }
+      renderScales();
+    </script>
+  </body>
+</html>

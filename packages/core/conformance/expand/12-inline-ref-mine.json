@@ -1,0 +1,30 @@
+{
+  "name": "inline-ref-mine",
+  "about": "내 와일드카드 인라인 참조는 lock으로 해시를 찾는다.",
+  "covers": ["ref-mine", "lock"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WhairColor00": "hairColorV03"},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "${w:WhairColor00} hair, {smile|grin}"}]},
+      "hairColorV03": {
+        "schema": 1,
+        "name": "hair color",
+        "items": [
+          {"id": "c001", "text": "red"},
+          {"id": "c002", "text": "blue", "w": 2},
+          {"id": "c003", "text": "silver"}
+        ]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "blue hair, grin"},
+    {"seed": "1", "text": "red hair, grin"},
+    {"seed": "2", "text": "silver hair, smile"},
+    {"seed": "3", "text": "red hair, smile"},
+    {"seed": "4", "text": "blue hair, smile"},
+    {"seed": "5", "text": "blue hair, smile"}
+  ]
+}

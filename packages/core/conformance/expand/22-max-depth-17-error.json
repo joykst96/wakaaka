@@ -1,0 +1,49 @@
+{
+  "name": "max-depth-17-error",
+  "about": "참조 17번은 E_DEPTH. seed와 무관하다.",
+  "covers": ["depth", "error"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {
+      "WchainBad010": "chainBad0100",
+      "WchainBad020": "chainBad0200",
+      "WchainBad030": "chainBad0300",
+      "WchainBad040": "chainBad0400",
+      "WchainBad050": "chainBad0500",
+      "WchainBad060": "chainBad0600",
+      "WchainBad070": "chainBad0700",
+      "WchainBad080": "chainBad0800",
+      "WchainBad090": "chainBad0900",
+      "WchainBad100": "chainBad1000",
+      "WchainBad110": "chainBad1100",
+      "WchainBad120": "chainBad1200",
+      "WchainBad130": "chainBad1300",
+      "WchainBad140": "chainBad1400",
+      "WchainBad150": "chainBad1500",
+      "WchainBad160": "chainBad1600",
+      "WchainBad170": "chainBad1700"
+    },
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "d001", "text": "0>${w:WchainBad010}"}]},
+      "chainBad0100": {"schema": 1, "items": [{"id": "d001", "text": "1>${w:WchainBad020}"}]},
+      "chainBad0200": {"schema": 1, "items": [{"id": "d001", "text": "2>${w:WchainBad030}"}]},
+      "chainBad0300": {"schema": 1, "items": [{"id": "d001", "text": "3>${w:WchainBad040}"}]},
+      "chainBad0400": {"schema": 1, "items": [{"id": "d001", "text": "4>${w:WchainBad050}"}]},
+      "chainBad0500": {"schema": 1, "items": [{"id": "d001", "text": "5>${w:WchainBad060}"}]},
+      "chainBad0600": {"schema": 1, "items": [{"id": "d001", "text": "6>${w:WchainBad070}"}]},
+      "chainBad0700": {"schema": 1, "items": [{"id": "d001", "text": "7>${w:WchainBad080}"}]},
+      "chainBad0800": {"schema": 1, "items": [{"id": "d001", "text": "8>${w:WchainBad090}"}]},
+      "chainBad0900": {"schema": 1, "items": [{"id": "d001", "text": "9>${w:WchainBad100}"}]},
+      "chainBad1000": {"schema": 1, "items": [{"id": "d001", "text": "10>${w:WchainBad110}"}]},
+      "chainBad1100": {"schema": 1, "items": [{"id": "d001", "text": "11>${w:WchainBad120}"}]},
+      "chainBad1200": {"schema": 1, "items": [{"id": "d001", "text": "12>${w:WchainBad130}"}]},
+      "chainBad1300": {"schema": 1, "items": [{"id": "d001", "text": "13>${w:WchainBad140}"}]},
+      "chainBad1400": {"schema": 1, "items": [{"id": "d001", "text": "14>${w:WchainBad150}"}]},
+      "chainBad1500": {"schema": 1, "items": [{"id": "d001", "text": "15>${w:WchainBad160}"}]},
+      "chainBad1600": {"schema": 1, "items": [{"id": "d001", "text": "16>${w:WchainBad170}"}]},
+      "chainBad1700": {"schema": 1, "items": [{"id": "d001", "text": "end{A|B}"}]}
+    }
+  },
+  "runs": [{"seed": "0", "error": "E_DEPTH"}, {"seed": "1", "error": "E_DEPTH"}]
+}

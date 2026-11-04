@@ -1,0 +1,35 @@
+{
+  "name": "ref-item-mine",
+  "about": "ref 항목(펼치지 않음)은 대상 전체를 항목 하나로 본다. 인라인 참조와 결과가 같다(성질 1).",
+  "covers": ["ref-item", "weights"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WhairColor00": "hairColorV03"},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "items": [{"id": "i001", "text": "bald"}, {"id": "i002", "ref": {"wildcard": "WhairColor00"}, "w": 3}]
+      },
+      "hairColorV03": {
+        "schema": 1,
+        "name": "hair color",
+        "items": [
+          {"id": "c001", "text": "red"},
+          {"id": "c002", "text": "blue", "w": 2},
+          {"id": "c003", "text": "silver"}
+        ]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "bald"},
+    {"seed": "1", "text": "red"},
+    {"seed": "2", "text": "bald"},
+    {"seed": "3", "text": "bald"},
+    {"seed": "4", "text": "bald"},
+    {"seed": "5", "text": "silver"},
+    {"seed": "6", "text": "red"},
+    {"seed": "7", "text": "silver"}
+  ]
+}

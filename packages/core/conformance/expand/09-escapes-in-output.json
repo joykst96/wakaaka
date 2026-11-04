@@ -1,0 +1,22 @@
+{
+  "name": "escapes-in-output",
+  "about": "이스케이프 결과. 대상이 아닌 백슬래시와 바깥의 |는 그대로.",
+  "covers": ["escape"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "items": [{"id": "i001", "text": "\\{literal\\} \\\\ \\(artist\\) \\m/ a|b \\||/ {\\||x} $\\{notref\\}"}]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "{literal} \\ \\(artist\\) \\m/ a|b \\||/ x ${notref}"},
+    {"seed": "1", "text": "{literal} \\ \\(artist\\) \\m/ a|b \\||/ | ${notref}"},
+    {"seed": "2", "text": "{literal} \\ \\(artist\\) \\m/ a|b \\||/ | ${notref}"},
+    {"seed": "3", "text": "{literal} \\ \\(artist\\) \\m/ a|b \\||/ | ${notref}"}
+  ]
+}

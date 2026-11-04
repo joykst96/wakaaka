@@ -1,0 +1,191 @@
+/* ==========================================================================
+   1층 · Primitives — 원시값
+   --------------------------------------------------------------------------
+   이 시스템에서 "날 값"(hex, rem, ms…)이 적히는 유일한 파일이다.
+   2층(semantic)·3층(component)·ui.css는 여기 있는 이름만 참조한다.
+   앱 코드에서 이 층을 직접 쓰지 않는다 → 반드시 2층 역할 토큰을 쓴다.
+
+   색 이름 규칙: --{hue}-{L}
+     L = OKLCH 명도(%) 반올림. 이름 자체가 밝기다.
+     · 두 색의 L 차이 ≈ 대비. 본문 텍스트(4.5:1)는 배경과 L이 ~45 이상 벌어져야 안전.
+     · 새 단계가 필요하면 그 명도 숫자로 끼워 넣는다(기존 이름을 바꿀 필요 없음).
+   출처: anima-webgpu 사이트(app.css) 실측값 + F:\css 라이트 팔레트.
+   ========================================================================== */
+
+:root {
+  /* ---------- 중성(gray) · 약간 푸른 쿨그레이, hue≈265 ---------- */
+  --gray-100: #ffffff;
+  --gray-98: #f7f8fa;
+  --gray-96: #eef1f6;
+  --gray-93: #e6e8ee;
+  --gray-89: #d7dbe3;
+  --gray-82: #bfc5d1;
+  --gray-66: #8b91a0;
+  --gray-59: #767e92;
+  --gray-47: #545b69;
+  --gray-38: #3a4154;
+  --gray-30: #2a2e38;
+  --gray-22: #181b22;
+  --gray-19: #11141a;
+  --gray-18: #0f1115;
+  --gray-16: #0b0e14;
+  --gray-0: #000000;
+
+  /* ---------- 파랑(blue) · 강조 ---------- */
+  --blue-95: #e7edfc;
+  --blue-72: #7aa2f7;
+  --blue-52: #2a5fce;
+  --blue-25: #1a2030;
+
+  /* ---------- 초록(green) · 성공 ---------- */
+  --green-80: #9ece6a;
+  --green-48: #1b7030;
+
+  /* ---------- 호박(amber) · 경고 ---------- */
+  --amber-78: #e0af68;
+  --amber-52: #8a5f10; /* F:\css의 #9a6a12는 #f7f8fa 위 4.45:1, 경고 배지(옅은 배경) 위에선 더 낮아 미달 → 어둡게 */
+
+  /* ---------- 빨강(red) · 오류/파괴 ---------- */
+  --red-72: #f7768e;
+  --red-53: #c0283c;
+
+  /* ---------- 보라(purple) · 라벨 ---------- */
+  --purple-72: #bb8aef; /* oklch(72% 0.15 305), 다크 배경 위 텍스트 */
+  --purple-50: #8c2faf; /* oklch(50% 0.2 315), 라이트 배경 위 텍스트 */
+
+  /* ---------- 주황(orange) · 라벨 ---------- */
+  --orange-75: #f2943c; /* oklch(75% 0.15 60) */
+  --orange-52: #a94700; /* oklch(52% 0.15 50)을 sRGB 안으로 자른 값. L55는 선택 배경 위 4.38:1로 미달이라 낮춤 */
+
+  /* ---------- 투명도 단계 (color-mix 퍼센트로 사용) ---------- */
+  --alpha-faint: 8%;
+  --alpha-subtle: 14%;
+  --alpha-soft: 22%;
+  --alpha-medium: 35%;
+  --alpha-half: 50%;
+  --alpha-scrim: 60%;
+  --alpha-strong: 85%;
+  --alpha-opaque: 92%;
+
+  /* ---------- 서체 ---------- */
+  --font-family-sans: "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --font-family-mono: Consolas, ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* 크기: 촘촘한 도구형 UI라 작은 쪽이 촘촘하다(실측 빈도 12 > 11 > 13 > 14 > 10). */
+  --font-size-2xs: 0.625rem;   /* 10 */
+  --font-size-xs: 0.6875rem;   /* 11 */
+  --font-size-sm: 0.75rem;     /* 12 */
+  --font-size-md: 0.8125rem;   /* 13 */
+  --font-size-base: 0.875rem;  /* 14 — 본문 */
+  --font-size-lg: 1rem;        /* 16 */
+  --font-size-xl: 1.125rem;    /* 18 */
+  --font-size-2xl: 1.25rem;    /* 20 */
+  --font-size-3xl: 1.625rem;   /* 26 */
+  --font-size-4xl: 2.5rem;     /* 40 */
+
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-none: 1;
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.35;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+
+  --letter-spacing-normal: 0;
+  --letter-spacing-caps: 0.06em;
+
+  /* 상태 변화량: hover/press 때 기준색을 전경색 쪽으로 섞는 비율 */
+  --mix-hover: 10%;
+  --mix-press: 18%;
+
+  --space-unit: 0.25rem; /* 4px @16px 루트 — 아래 간격 블록 참고 */
+
+  /* (간격 배수는 아래 별도 블록: 밀도 전환 때 재계산돼야 해서 분리) */
+
+  /* ---------- 라운드 · 단위 × 배수 ----------
+     --radius-unit만 바꾸면 전체가 둥글게/각지게 바뀐다(0이면 완전 직각). */
+  --radius-unit: 0.125rem; /* 2px */
+  --radius-none: 0;
+  --radius-xs: calc(var(--radius-unit) * 1);  /* 2 */
+  --radius-sm: calc(var(--radius-unit) * 2);  /* 4 */
+  --radius-md: calc(var(--radius-unit) * 3);  /* 6 */
+  --radius-lg: calc(var(--radius-unit) * 4);  /* 8 */
+  --radius-xl: calc(var(--radius-unit) * 5);  /* 10 */
+  --radius-2xl: calc(var(--radius-unit) * 7); /* 14 */
+  --radius-pill: 999px;
+  --radius-full: 50%;
+
+  /* ---------- 선 굵기 (px 유지: 확대해도 헤어라인이어야 함) ---------- */
+  --border-width-thin: 1px;
+  --border-width-icon: 1.5px; /* CSS로 그리는 아이콘 선(셀렉트 v, 비율 아이콘) */
+  --border-width-thick: 2px;
+  --border-width-ring: 3px;
+
+  /* ---------- 그림자 기하 (색은 2층에서 테마별로) ---------- */
+  --shadow-geometry-sm: 0 4px 12px;
+  --shadow-geometry-md: 0 8px 24px;
+  --shadow-geometry-lg: 0 8px 40px;
+
+  /* ---------- 모션 ---------- */
+  --duration-instant: 0ms;
+  --duration-fast: 120ms;
+  --duration-base: 150ms;
+  --duration-slow: 250ms;
+  --ease-standard: ease;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ---------- 크기 ---------- */
+  --size-container-sm: 40rem;      /* 640 */
+  --size-container-md: 68.75rem;   /* 1100 */
+  --size-sidebar: 26.25rem;        /* 420 */
+  --size-dialog: 27.5rem;          /* 440 */
+
+  /* ---------- 레이어(z-index) ---------- */
+  --z-base: 0;
+  --z-raised: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 1000;
+  --z-modal: 1100;
+  --z-toast: 1200;
+}
+
+/* ---------- 간격 · 단위 × 배수 ----------
+   모든 간격은 --space-unit의 배수. 단위 하나만 바꾸면 전체 밀도가 바뀐다.
+   이름의 숫자 = 배수(px 아님). _5는 반 단계(0_5 = 0.5배).
+   [data-density]를 선택자에 넣은 이유: 커스텀 속성은 선언된 요소에서 계산된 뒤
+   상속되므로, 하위 요소에서 --space-unit만 바꾸면 배수 값이 다시 계산되지 않는다. */
+[data-density="compact"] { --space-unit: 0.1875rem; }   /* 3px */
+[data-density="comfortable"] { --space-unit: 0.3125rem; } /* 5px */
+
+:root,
+[data-density] {
+  --space-0: 0;
+  --space-px: 1px;
+  --space-0_5: calc(var(--space-unit) * 0.5); /* 2 */
+  --space-1: calc(var(--space-unit) * 1);     /* 4 */
+  --space-1_5: calc(var(--space-unit) * 1.5); /* 6 */
+  --space-2: calc(var(--space-unit) * 2);     /* 8 */
+  --space-2_5: calc(var(--space-unit) * 2.5); /* 10 */
+  --space-3: calc(var(--space-unit) * 3);     /* 12 */
+  --space-3_5: calc(var(--space-unit) * 3.5); /* 14 */
+  --space-4: calc(var(--space-unit) * 4);     /* 16 */
+  --space-5: calc(var(--space-unit) * 5);     /* 20 */
+  --space-6: calc(var(--space-unit) * 6);     /* 24 */
+  --space-7: calc(var(--space-unit) * 7);     /* 28 */
+  --space-8: calc(var(--space-unit) * 8);     /* 32 */
+  --space-10: calc(var(--space-unit) * 10);   /* 40 */
+  --space-12: calc(var(--space-unit) * 12);   /* 48 */
+  --space-16: calc(var(--space-unit) * 16);   /* 64 */
+}
+
+/* 모션 최소화 선호: 시간 토큰만 0으로 → 토큰을 쓰는 모든 전환이 자동으로 꺼진다. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}

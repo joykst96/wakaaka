@@ -1,0 +1,33 @@
+{
+  "name": "empty-results-not-joined",
+  "about": "빈 항목은 '없음' 보기. 빈 결과에는 구분자를 붙이지 않는다. count [0,2].",
+  "covers": ["empty", "sep", "count"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "select": {"count": [0, 2]},
+        "items": [
+          {"id": "none", "text": "", "w": 3},
+          {"id": "a001", "text": "hat"},
+          {"id": "a002", "text": "{scarf|}"}
+        ]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "hat, scarf"},
+    {"seed": "1", "text": "hat"},
+    {"seed": "2", "text": "hat"},
+    {"seed": "3", "text": ""},
+    {"seed": "4", "text": ""},
+    {"seed": "5", "text": ""},
+    {"seed": "6", "text": ""},
+    {"seed": "7", "text": ""},
+    {"seed": "8", "text": "scarf"},
+    {"seed": "9", "text": ""}
+  ]
+}

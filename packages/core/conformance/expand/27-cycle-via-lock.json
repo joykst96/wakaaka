@@ -1,0 +1,16 @@
+{
+  "name": "cycle-via-lock",
+  "about": "잘못된 lock으로 A → B → A 순환. E_CYCLE.",
+  "covers": ["error", "lock"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WcycleA00010": "cycleA000001", "WcycleB00010": "cycleB000001"},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "${w:WcycleA00010}"}]},
+      "cycleA000001": {"schema": 1, "items": [{"id": "x", "text": "${w:WcycleB00010}"}]},
+      "cycleB000001": {"schema": 1, "items": [{"id": "x", "text": "${w:WcycleA00010}"}]}
+    }
+  },
+  "runs": [{"seed": "0", "error": "E_CYCLE"}]
+}

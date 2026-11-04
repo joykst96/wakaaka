@@ -1,0 +1,196 @@
+/* ==========================================================================
+   2층 · Semantic — 역할(의미) 토큰
+   --------------------------------------------------------------------------
+   앱 코드가 쓰는 층. "무슨 색"이 아니라 "어디에 쓰는 색"으로 이름 짓는다.
+   여기엔 날 값이 없다 — 1층 이름만 참조한다.
+
+   테마: light-dark(라이트값, 다크값)로 한 줄에 두 테마를 함께 정의한다.
+     · 블록 중복 없음 → 라이트/다크 값이 어긋날 일이 없다.
+     · 어느 요소에든 data-theme을 붙이면 그 하위 트리만 테마가 바뀐다.
+   기본은 다크, OS가 라이트면 라이트, data-theme이 있으면 그것이 우선.
+
+   파생 규칙(새 값을 만들지 않고 기존 색에서 계산):
+     · 옅은 배경(subtle)  = 기준색 + 투명도   color-mix(… --alpha-*, transparent)
+     · hover/press        = 기준색을 전경색 쪽으로 --mix-hover/press 만큼 섞기
+       (다크에선 밝아지고 라이트에선 어두워진다 — 테마별 규칙을 따로 둘 필요 없음)
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+  }
+}
+[data-theme="light"] {
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:root {
+  /* ---------------- 배경 (낮음 → 높음) ---------------- */
+  --color-bg: light-dark(var(--gray-98), var(--gray-18));          /* 페이지 */
+  --color-bg-sunken: light-dark(var(--gray-96), var(--gray-19));   /* 입력창·로그·캔버스 같은 움푹한 영역 */
+  --color-bg-surface: light-dark(var(--gray-100), var(--gray-22)); /* 패널·카드·다이얼로그 */
+  --color-bg-muted: light-dark(var(--gray-93), var(--gray-30));    /* 보조 버튼·중립 칩 */
+  --color-bg-muted-hover: color-mix(in oklab, var(--color-bg-muted), var(--color-fg) var(--mix-hover));
+  --color-bg-muted-press: color-mix(in oklab, var(--color-bg-muted), var(--color-fg) var(--mix-press));
+  --color-bg-selected: light-dark(var(--blue-95), var(--blue-25)); /* 선택된 항목·활성 칩 */
+  --color-bg-disabled: light-dark(var(--gray-89), var(--gray-38));
+
+  /* ---------------- 테두리 ---------------- */
+  --color-border: light-dark(var(--gray-89), var(--gray-30));
+  --color-border-strong: light-dark(var(--gray-82), var(--gray-38));
+  --color-border-subtle: color-mix(in srgb, var(--color-border) var(--alpha-half), transparent);
+
+  /* ---------------- 전경(텍스트·아이콘) ---------------- */
+  --color-fg: light-dark(var(--gray-22), var(--gray-93));          /* 본문 */
+  --color-fg-muted: light-dark(var(--gray-47), var(--gray-66));    /* 보조 설명·라벨 (4.5:1 이상) */
+  --color-fg-subtle: var(--gray-59);                               /* 플레이스홀더·비활성 전용 (본문 금지) */
+  --color-fg-disabled: var(--color-fg-subtle);
+
+  /* ---------------- 의도(intent) 색 ----------------
+     모든 의도는 같은 모양을 가진다:
+       --color-{X}               텍스트·아이콘·테두리 (표면 위 4.5:1 이상)
+       --color-{X}-solid         채움 배경
+       --color-{X}-solid-hover
+       --color-{X}-solid-press
+       --color-on-{X}            solid 위에 올리는 텍스트
+       --color-{X}-subtle        옅은 배경(배지·하이라이트)
+       --color-{X}-subtle-hover
+       --color-{X}-border        옅은 테두리 */
+
+  /* accent — 주 동작·링크·포커스 */
+  --color-accent: light-dark(var(--blue-52), var(--blue-72));
+  --color-accent-solid: var(--color-accent);
+  --color-accent-solid-hover: color-mix(in oklab, var(--color-accent-solid), var(--color-fg) var(--mix-hover));
+  --color-accent-solid-press: color-mix(in oklab, var(--color-accent-solid), var(--color-fg) var(--mix-press));
+  --color-on-accent: light-dark(var(--gray-100), var(--gray-16));
+  --color-accent-subtle: color-mix(in srgb, var(--color-accent) var(--alpha-subtle), transparent);
+  --color-accent-subtle-hover: color-mix(in srgb, var(--color-accent) var(--alpha-soft), transparent);
+  --color-accent-border: color-mix(in srgb, var(--color-accent) var(--alpha-medium), transparent);
+
+  /* success */
+  --color-success: light-dark(var(--green-48), var(--green-80));
+  --color-success-solid: var(--color-success);
+  --color-success-solid-hover: color-mix(in oklab, var(--color-success-solid), var(--color-fg) var(--mix-hover));
+  --color-success-solid-press: color-mix(in oklab, var(--color-success-solid), var(--color-fg) var(--mix-press));
+  --color-on-success: light-dark(var(--gray-100), var(--gray-16));
+  --color-success-subtle: color-mix(in srgb, var(--color-success) var(--alpha-subtle), transparent);
+  --color-success-subtle-hover: color-mix(in srgb, var(--color-success) var(--alpha-soft), transparent);
+  --color-success-border: color-mix(in srgb, var(--color-success) var(--alpha-medium), transparent);
+
+  /* warning — 특수 모드·주의 */
+  --color-warning: light-dark(var(--amber-52), var(--amber-78));
+  --color-warning-solid: var(--color-warning);
+  --color-warning-solid-hover: color-mix(in oklab, var(--color-warning-solid), var(--color-fg) var(--mix-hover));
+  --color-warning-solid-press: color-mix(in oklab, var(--color-warning-solid), var(--color-fg) var(--mix-press));
+  --color-on-warning: light-dark(var(--gray-100), var(--gray-16));
+  --color-warning-subtle: color-mix(in srgb, var(--color-warning) var(--alpha-subtle), transparent);
+  --color-warning-subtle-hover: color-mix(in srgb, var(--color-warning) var(--alpha-soft), transparent);
+  --color-warning-border: color-mix(in srgb, var(--color-warning) var(--alpha-medium), transparent);
+
+  /* danger — 오류 메시지 + 삭제 같은 파괴적 동작
+     텍스트(밝은 분홍)와 채움(진한 빨강)이 다르다: 다크 배경 위 텍스트는 밝아야 읽히고,
+     흰 글자를 올리는 채움은 어두워야 하기 때문. */
+  --color-danger: light-dark(var(--red-53), var(--red-72));
+  --color-danger-solid: var(--red-53);
+  --color-danger-solid-hover: color-mix(in oklab, var(--color-danger-solid), var(--color-fg) var(--mix-hover));
+  --color-danger-solid-press: color-mix(in oklab, var(--color-danger-solid), var(--color-fg) var(--mix-press));
+  --color-on-danger: var(--gray-100);
+  --color-danger-subtle: color-mix(in srgb, var(--color-danger) var(--alpha-subtle), transparent);
+  --color-danger-subtle-hover: color-mix(in srgb, var(--color-danger) var(--alpha-soft), transparent);
+  --color-danger-border: color-mix(in srgb, var(--color-danger) var(--alpha-medium), transparent);
+
+  /* ---------------- 라벨 (분류용) ----------------
+     태그 종류·카테고리처럼 "어느 무리인가"만 구분하는 색이다. 성공·오류 같은 뜻이 없다.
+     텍스트 색이다(표면·움푹한 영역·선택 배경 위 4.5:1 이상). 옅은 배경이 필요하면 의도 색처럼 color-mix로 만든다.
+     파랑·빨강·초록은 의도 색과 같은 원시값을 쓴다. 어느 라벨이 무엇을 뜻하는지는 앱 3층이 정한다. */
+  --color-label-blue: light-dark(var(--blue-52), var(--blue-72));
+  --color-label-red: light-dark(var(--red-53), var(--red-72));
+  --color-label-purple: light-dark(var(--purple-50), var(--purple-72));
+  --color-label-green: light-dark(var(--green-48), var(--green-80));
+  --color-label-orange: light-dark(var(--orange-52), var(--orange-75));
+
+  /* ---------------- 포커스 ---------------- */
+  --color-focus-ring: var(--color-accent);
+  --color-focus-halo: var(--color-accent-border);
+
+  /* ---------------- 오버레이 ---------------- */
+  --color-scrim: light-dark(
+    color-mix(in srgb, var(--gray-0) var(--alpha-medium), transparent),
+    color-mix(in srgb, var(--gray-0) var(--alpha-scrim), transparent)
+  );
+  /* 미디어(이미지 뷰어) 위: 테마와 무관하게 항상 어두운 배경 + 흰 컨트롤 */
+  --color-scrim-media: color-mix(in srgb, var(--gray-0) var(--alpha-opaque), transparent);
+  --color-on-media: color-mix(in srgb, var(--gray-100) var(--alpha-strong), transparent);
+  --color-on-media-control: color-mix(in srgb, var(--gray-100) var(--alpha-faint), transparent);
+  --color-on-media-control-hover: color-mix(in srgb, var(--gray-100) var(--alpha-soft), transparent);
+
+  /* ---------------- 그림자 ---------------- */
+  --color-shadow: light-dark(
+    color-mix(in srgb, var(--gray-0) var(--alpha-subtle), transparent),
+    color-mix(in srgb, var(--gray-0) var(--alpha-half), transparent)
+  );
+  --shadow-sm: var(--shadow-geometry-sm) var(--color-shadow);
+  --shadow-md: var(--shadow-geometry-md) var(--color-shadow);
+  --shadow-lg: var(--shadow-geometry-lg) var(--color-shadow);
+
+  /* ---------------- 타이포그래피 역할 ----------------
+     font 단축 속성 묶음: 사용은 `font: var(--font-body);` 한 줄. */
+  --font-display: var(--font-weight-bold) var(--font-size-4xl) / var(--line-height-tight) var(--font-family-sans);
+  --font-title: var(--font-weight-semibold) var(--font-size-2xl) / var(--line-height-tight) var(--font-family-sans);
+  --font-heading: var(--font-weight-semibold) var(--font-size-lg) / var(--line-height-tight) var(--font-family-sans);
+  --font-overline: var(--font-weight-semibold) var(--font-size-md) / var(--line-height-normal) var(--font-family-sans);
+  --font-body: var(--font-weight-regular) var(--font-size-base) / var(--line-height-normal) var(--font-family-sans);
+  --font-body-sm: var(--font-weight-regular) var(--font-size-sm) / var(--line-height-normal) var(--font-family-sans);
+  --font-subtitle: var(--font-weight-regular) var(--font-size-md) / var(--line-height-normal) var(--font-family-sans);
+  --font-label: var(--font-weight-regular) var(--font-size-sm) / var(--line-height-normal) var(--font-family-sans);
+  --font-caption: var(--font-weight-regular) var(--font-size-xs) / var(--line-height-normal) var(--font-family-sans);
+  --font-control: var(--font-weight-semibold) var(--font-size-base) / var(--line-height-none) var(--font-family-sans);
+  --font-control-sm: var(--font-weight-semibold) var(--font-size-sm) / var(--line-height-none) var(--font-family-sans);
+  --font-code: var(--font-weight-regular) var(--font-size-sm) / var(--line-height-relaxed) var(--font-family-mono);
+  --letter-spacing-overline: var(--letter-spacing-caps);
+
+  /* ---------------- 모션 역할 ---------------- */
+  --transition-fast: var(--duration-fast) var(--ease-standard);
+  --transition-base: var(--duration-base) var(--ease-standard);
+  --transition-slow: var(--duration-slow) var(--ease-out);
+
+  /* ---------------- 포커스 링 ---------------- */
+  --focus-ring-width: var(--border-width-thick);
+  --focus-ring-offset: var(--border-width-thick);
+  --focus-halo: 0 0 0 var(--border-width-ring) var(--color-focus-halo);
+}
+
+/* 간격이 들어간 역할 토큰은 밀도 전환([data-density]) 때 다시 계산되도록 따로 둔다. */
+:root,
+[data-density] {
+  /* 형제 요소 사이 간격 (세로 stack, 가로 inline 공용) */
+  --gap-2xs: var(--space-0_5);
+  --gap-xs: var(--space-1);
+  --gap-sm: var(--space-1_5);
+  --gap-md: var(--space-2);
+  --gap-lg: var(--space-3);
+  --gap-xl: var(--space-4);
+  --gap-2xl: var(--space-6);
+
+  /* 컨테이너 안쪽 여백 */
+  --inset-xs: var(--space-1);
+  --inset-sm: var(--space-2);
+  --inset-md: var(--space-3);
+  --inset-lg: var(--space-4);
+  --inset-xl: var(--space-6);
+
+  /* 페이지 레이아웃 */
+  --layout-max-width: var(--size-container-md);
+  --layout-max-width-narrow: var(--size-container-sm);
+  --layout-sidebar-width: var(--size-sidebar);
+  --layout-page-padding-x: var(--space-4);
+  --layout-page-padding-y: var(--space-6);
+  --layout-gap: var(--space-4);
+  --layout-sticky-top: var(--space-4);
+}

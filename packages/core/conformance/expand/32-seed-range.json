@@ -1,0 +1,26 @@
+{
+  "name": "seed-range",
+  "about": "seed 경계값. 범위 밖은 E_SEED.",
+  "covers": ["seed", "error"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "select": {"count": [1, 2]},
+        "items": [{"id": "i001", "text": "{a|b|c|d|e|f|g|h}{1|2|3|4|5|6|7|8}"}, {"id": "i002", "text": "{x|y}"}]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "f2"},
+    {"seed": "1", "text": "y, a8"},
+    {"seed": "9007199254740992", "text": "y, c5"},
+    {"seed": "9007199254740993", "text": "x"},
+    {"seed": "18446744073709551615", "text": "y, h3"},
+    {"seed": "18446744073709551616", "error": "E_SEED"},
+    {"seed": "-1", "error": "E_SEED"}
+  ]
+}

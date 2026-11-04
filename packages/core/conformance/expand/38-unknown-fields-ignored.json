@@ -1,0 +1,37 @@
+{
+  "name": "unknown-fields-ignored",
+  "about": "13에 문서·select·항목 단계의 모르는 필드(예약된 select.order 포함)를 더했다. 전개기는 모르는 필드를 무시하므로 결과는 13과 같다. ref 객체 안은 예외(36). 저장 스키마는 모르는 필드를 거부한다(SPEC 3.3).",
+  "covers": ["ref-item", "bundle"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WhairColor00": "hairColorV03"},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "note": "unknown doc field",
+        "select": {"count": [1, 1], "order": "listed"},
+        "items": [{"id": "i001", "text": "bald", "comment": "unknown item field"}, {"id": "i002", "ref": {"wildcard": "WhairColor00"}, "w": 3, "tags": ["x"]}]
+      },
+      "hairColorV03": {
+        "schema": 1,
+        "name": "hair color",
+        "items": [
+          {"id": "c001", "text": "red"},
+          {"id": "c002", "text": "blue", "w": 2},
+          {"id": "c003", "text": "silver"}
+        ]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "bald"},
+    {"seed": "1", "text": "red"},
+    {"seed": "2", "text": "bald"},
+    {"seed": "3", "text": "bald"},
+    {"seed": "4", "text": "bald"},
+    {"seed": "5", "text": "silver"},
+    {"seed": "6", "text": "red"},
+    {"seed": "7", "text": "silver"}
+  ]
+}

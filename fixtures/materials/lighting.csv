@@ -1,0 +1,16 @@
+name,posts,group,ko
+shadow,149948,조명,그림자
+glowing,127740,조명,발광
+sunlight,95495,조명,햇빛
+light_particles,74673,조명,빛 입자
+lens_flare,46436,조명,렌즈 플레어
+backlighting,42082,조명,역광
+blurry_foreground,38533,조명,전경블러
+glint,34755,조명,반짝임
+light_rays,31124,조명,빛줄기
+shade,20696,조명,그늘
+dark,18230,조명,어두움
+dappled_sunlight,13848,조명,햇살 스며들기
+sunbeam,12525,조명,햇살
+sidelighting,10845,조명,측면 조명
+spotlight,8131,조명,스포트라이트

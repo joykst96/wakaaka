@@ -1,0 +1,14 @@
+{
+  "name": "syntax-error-in-unpicked-item",
+  "about": "w=0이라 뽑히지 않는 항목의 문법 오류도 사전 검사에서 걸린다.",
+  "covers": ["error", "syntax"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "fine"}, {"id": "i002", "text": "{unclosed", "w": 0}]}
+    }
+  },
+  "runs": [{"seed": "0", "error": "E_UNCLOSED_CHOICE"}]
+}

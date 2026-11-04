@@ -1,0 +1,8 @@
+**/node_modules
+.git
+fixtures/out
+**/.env
+**/.env.*
+!**/.env.example
+**/__pycache__
+apps/web/dist

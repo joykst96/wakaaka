@@ -1,0 +1,28 @@
+{
+  "name": "comma-cleanup-optional-ref",
+  "about": "0개일 수 있는 참조를 쉼표 사이에 둔 흔한 경우. 0개가 뽑히면 '1girl, , standing'이 아니라 '1girl, standing'.",
+  "covers": ["cleanup", "count", "ref-mine"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WoptAcc00001": "optAccV00001"},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "1girl, ${w:WoptAcc00001}, standing"}]},
+      "optAccV00001": {
+        "schema": 1,
+        "select": {"count": [0, 2]},
+        "items": [{"id": "a001", "text": "hat"}, {"id": "a002", "text": "scarf"}]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "1girl, scarf, hat, standing"},
+    {"seed": "1", "text": "1girl, hat, scarf, standing"},
+    {"seed": "2", "text": "1girl, standing"},
+    {"seed": "3", "text": "1girl, standing"},
+    {"seed": "4", "text": "1girl, scarf, standing"},
+    {"seed": "5", "text": "1girl, hat, scarf, standing"},
+    {"seed": "6", "text": "1girl, hat, standing"},
+    {"seed": "7", "text": "1girl, standing"}
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@wakaaka/api",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.ts",
+    "dev": "node --env-file=.env src/server.ts",
+    "test": "tsc && vitest run",
+    "typecheck": "tsc",
+    "db:up": "docker run -d --name wakaaka-pg --rm --tmpfs /var/lib/postgresql/data -p 127.0.0.1:54329:5432 -e POSTGRES_USER=wakaaka -e POSTGRES_PASSWORD=wakaaka -e POSTGRES_DB=wakaaka_test postgres:17.11-alpine",
+    "db:down": "docker stop wakaaka-pg",
+    "seed": "node src/seed.ts",
+    "tags:import": "node --env-file=.env src/import-tags.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.6",
+    "@wakaaka/core": "0.0.0",
+    "argon2": "0.45.1",
+    "hono": "4.13.16",
+    "kysely": "0.29.8",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/pg": "8.23.1",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

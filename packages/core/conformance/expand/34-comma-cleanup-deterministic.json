@@ -1,0 +1,18 @@
+{
+  "name": "comma-cleanup-deterministic",
+  "about": "최종 결과의 쉼표 정리(SPEC 4.4). 항상 빈 문자열을 내는 참조가 앞·가운데·끝에 있고, 직접 쓴 ', ,'도 있다. 공백뿐인 조각을 빼고 앞뒤 공백을 지운다.",
+  "covers": ["cleanup", "empty", "ref-mine"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WemptyPool01": "emptyPoolV01"},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "items": [{"id": "i001", "text": "${w:WemptyPool01}, red hair, ${w:WemptyPool01}, , smile, ${w:WemptyPool01}"}]
+      },
+      "emptyPoolV01": {"schema": 1, "select": {"count": [0, 0]}, "items": [{"id": "a001", "text": "x"}]}
+    }
+  },
+  "runs": [{"seed": "0", "text": "red hair, smile"}, {"seed": "1", "text": "red hair, smile"}]
+}

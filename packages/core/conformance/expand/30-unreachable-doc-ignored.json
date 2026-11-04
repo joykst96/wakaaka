@@ -1,0 +1,15 @@
+{
+  "name": "unreachable-doc-ignored",
+  "about": "루트에서 닿지 않는 문서는 검사하지 않는다(문법 오류가 있어도).",
+  "covers": ["bundle"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "ok"}]},
+      "orphan000000": {"schema": 1, "items": [{"id": "x", "text": "{broken"}]}
+    }
+  },
+  "runs": [{"seed": "0", "text": "ok"}]
+}

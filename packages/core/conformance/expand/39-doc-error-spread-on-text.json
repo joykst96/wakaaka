@@ -1,0 +1,17 @@
+{
+  "name": "doc-error-spread-on-text",
+  "about": "spread는 ref 항목에만 쓸 수 있다. 값이 false여도 text 항목에 키가 있으면 E_DOC.",
+  "covers": ["spread", "error"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "items": [{"id": "i001", "text": "red"}, {"id": "i002", "text": "blue", "spread": false}]
+      }
+    }
+  },
+  "runs": [{"seed": "0", "error": "E_DOC"}]
+}

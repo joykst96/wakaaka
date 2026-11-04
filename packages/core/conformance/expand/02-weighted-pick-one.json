@@ -1,0 +1,32 @@
+{
+  "name": "weighted-pick-one",
+  "about": "가중치 3:1:2에서 하나 뽑기.",
+  "covers": ["weights"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "items": [
+          {"id": "i7Kq", "text": "red hair", "w": 3},
+          {"id": "p2Za", "text": "blue hair"},
+          {"id": "Hh40", "text": "silver hair", "w": 2}
+        ]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "red hair"},
+    {"seed": "1", "text": "silver hair"},
+    {"seed": "2", "text": "silver hair"},
+    {"seed": "3", "text": "silver hair"},
+    {"seed": "4", "text": "red hair"},
+    {"seed": "5", "text": "red hair"},
+    {"seed": "6", "text": "red hair"},
+    {"seed": "7", "text": "blue hair"},
+    {"seed": "8", "text": "blue hair"},
+    {"seed": "9", "text": "red hair"}
+  ]
+}

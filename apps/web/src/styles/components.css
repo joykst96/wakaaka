@@ -1,0 +1,152 @@
+/* ==========================================================================
+   와카아카 전용 3층 컴포넌트 토큰 (DESIGN 10절)
+   색·글꼴은 2층만, 2층에 없는 기하(라운드·테두리·크기·z)는 1층 스케일만 참조한다. 날 값은 두지 않는다.
+   앱 CSS(app.css)와 CodeMirror 테마(editor/theme.ts)는 이 토큰과 2층만 쓴다. 검사: npm run lint:css
+   ========================================================================== */
+
+:root,
+[data-density] {
+  /* ---------------- 공통 ---------------- */
+  --wk-border-width: var(--border-width-thin);
+  --wk-radius: var(--radius-md);
+  --wk-radius-lg: var(--radius-xl);
+  --wk-z-drawer: var(--z-overlay);
+  --wk-z-popover: var(--z-dropdown);
+  --wk-z-sticky: var(--z-sticky);
+
+  /* ---------------- 편집 화면 탭 ---------------- */
+  --tab-bar-bg: var(--color-bg-sunken);
+  --tab-bar-border: var(--color-border);
+  --tab-bg: transparent;
+  --tab-bg-hover: var(--color-bg-muted);
+  --tab-bg-active: var(--color-bg);
+  --tab-fg: var(--color-fg-muted);
+  --tab-fg-active: var(--color-fg);
+  --tab-accent: var(--color-accent);
+  --tab-dirty: var(--color-warning);
+  --tab-padding: var(--space-1_5) var(--space-1) var(--space-1_5) var(--space-3);
+  --tab-max-width: calc(var(--space-16) * 3);
+  --tab-radius: var(--radius-md);
+
+  /* ---------------- 앱 틀 (3단) ---------------- */
+  --wk-sidebar-width: var(--layout-sidebar-width);
+  --wk-header-bg: var(--color-bg-surface);
+  --wk-header-border: var(--color-border);
+  --wk-header-padding: var(--inset-sm) var(--inset-md);
+  --wk-pane-gap: var(--layout-gap);
+  --wk-pane-padding: var(--inset-md);
+  --wk-sidebar-bg: var(--color-bg-surface);
+  --wk-sidebar-item-padding: var(--inset-xs) var(--inset-sm);
+  --wk-sidebar-item-bg-hover: var(--color-bg-muted);
+  --wk-sidebar-item-bg-current: var(--color-bg-selected);
+  --wk-preview-width: var(--size-sidebar);
+  --wk-desc-min-height: var(--space-16);
+  /* 이름 칸이 이보다 좁아지면 상태·버튼이 다음 줄로 간다 */
+  --wk-name-basis: calc(var(--space-16) * 3);
+  --wk-drawer-shadow: var(--shadow-lg);
+  --wk-scrim: var(--color-scrim);
+
+  /* ---------------- 편집기 (CodeMirror 테마) ---------------- */
+  --editor-bg: var(--color-bg-sunken);
+  --editor-fg: var(--color-fg);
+  --editor-font: var(--font-code);
+  --editor-border: var(--color-border);
+  --editor-border-focus: var(--color-accent);
+  --editor-padding: var(--space-1_5) var(--space-2);
+  --editor-radius: var(--radius-md);
+  --editor-caret: var(--color-fg);
+  --editor-selection: var(--color-accent-subtle-hover);
+  /* 선택지 { | } 색: 겹 수에 따라 돌려 쓴다(1·2·3겹, 4겹부터 다시 1) */
+  --editor-choice-1: var(--color-warning);
+  --editor-choice-2: var(--color-success);
+  --editor-choice-3: var(--color-accent);
+  /* 바깥 프롬프트 표기(ComfyUI (tag:1.2), <lora:…>, NAI 1.2::…::, BREAK): 와카아카가 해석하지 않고 넘기는 것 */
+  --editor-foreign: var(--color-fg-muted);
+  /* 가중치 표기(텍스트 보기 줄 맨 앞 3::) */
+  --editor-weight: var(--color-accent);
+  --editor-escape: var(--color-fg-muted);
+  --editor-name-ref: var(--color-accent);
+  --editor-error-underline: var(--color-danger);
+  --editor-warning-underline: var(--color-warning);
+  --editor-info-underline: var(--color-accent);
+  --editor-tooltip-bg: var(--color-bg-surface);
+  --editor-tooltip-border: var(--color-border);
+  --editor-tooltip-shadow: var(--shadow-md);
+  --editor-tooltip-padding: var(--space-2) var(--space-2_5);
+  --editor-completion-active: var(--color-bg-selected);
+  --editor-completion-detail: var(--color-fg-muted);
+  --editor-completion-detail-gap: var(--space-2);
+  --editor-completion-item-padding: var(--space-1) var(--space-2);
+  --editor-completion-max-height: calc(var(--space-16) * 4);
+  /* 태그 후보 줄의 한국어 설명(한 줄로 자름)과 선택한 후보 옆 설명 상자 */
+  --editor-completion-summary: var(--color-fg-muted);
+  --editor-completion-summary-max-width: calc(var(--space-16) * 4);
+  --editor-tag-info-max-width: var(--size-dialog);
+
+  /* ---------------- 태그 분류 색 (Danbooru 기본 타입, DESIGN 10절) ---------------- */
+  --tag-general: var(--color-label-blue);
+  --tag-artist: var(--color-label-red);
+  --tag-copyright: var(--color-label-purple);
+  --tag-character: var(--color-label-green);
+  --tag-meta: var(--color-label-orange);
+  --editor-gutter-fg: var(--color-fg-subtle);
+
+  /* ---------------- 참조 칩 ---------------- */
+  --ref-chip-bg: var(--color-accent-subtle);
+  --ref-chip-bg-hover: var(--color-accent-subtle-hover);
+  --ref-chip-fg: var(--color-accent);
+  --ref-chip-border: var(--color-accent-border);
+  --ref-chip-missing-bg: var(--color-danger-subtle);
+  --ref-chip-missing-fg: var(--color-danger);
+  --ref-chip-origin-fg: var(--color-fg-muted);
+  --ref-chip-radius: var(--radius-sm);
+  --ref-chip-padding-x: var(--space-1);
+  --ref-chip-font: var(--font-body-sm);
+
+  /* ---------------- 항목 목록 ---------------- */
+  --item-row-gap: var(--gap-sm);
+  --item-row-padding: var(--space-0_5) 0;
+  --item-row-bg-highlight: var(--color-accent-subtle);
+  --item-row-bg-error: var(--color-danger-subtle);
+  --item-handle-fg: var(--color-fg-subtle);
+  --item-weight-width: var(--space-12);
+  --item-static-padding: var(--space-1_5) var(--space-2);
+  --item-static-min-height: var(--space-8);
+
+  /* 선택지 가중치 패널 (항목 행 아래) */
+  --choice-weights-indent: var(--space-8);
+  --choice-weights-padding: var(--space-2) var(--space-2_5);
+  --choice-weights-cell-padding: var(--space-0_5) var(--space-1);
+
+  /* ---------------- 미리보기 ---------------- */
+  --preview-result-bg: var(--color-bg-sunken);
+  --preview-result-padding: var(--space-2) var(--space-2_5);
+  --preview-seed-fg: var(--color-fg-muted);
+  --preview-highlight-bg: var(--color-accent-subtle-hover);
+  --preview-highlight-outline: var(--color-accent);
+  --preview-hover-fg: var(--color-fg);
+  --preview-error-fg: var(--color-danger);
+
+  /* ---------------- 의존 트리 ---------------- */
+  --tree-indent: var(--space-4);
+  --tree-line: var(--color-border);
+  --tree-seen-fg: var(--color-fg-muted);
+  --tree-missing-fg: var(--color-danger);
+
+  /* ---------------- 카드 (둘러보기) ---------------- */
+  --card-min-width: var(--size-dialog);
+  --card-padding: var(--inset-md);
+  --card-gap: var(--gap-sm);
+  --card-example-bg: var(--color-bg-sunken);
+  --card-example-padding: var(--space-1) var(--space-2);
+  --card-border-hover: var(--color-accent);
+
+  /* ---------------- 문법 가이드 ---------------- */
+  --guide-width: var(--size-container-sm);
+  --guide-output-bg: var(--color-bg-sunken);
+  --guide-output-padding: var(--space-2) var(--space-2_5);
+
+  /* ---------------- 상태 띠 ---------------- */
+  --banner-padding: var(--inset-sm) var(--inset-md);
+  --banner-radius: var(--radius-md);
+}

@@ -1,0 +1,15 @@
+{
+  "name": "doc-error-hash-ref-item",
+  "about": "ref 항목의 {\"hash\": …}는 없앤 형식이라 E_DOC.",
+  "covers": ["error", "ref-item"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "ref": {"hash": "Snap00000001"}}]},
+      "Snap00000001": {"schema": 1, "items": [{"id": "a001", "text": "dress"}]}
+    }
+  },
+  "runs": [{"seed": "0", "error": "E_DOC"}]
+}

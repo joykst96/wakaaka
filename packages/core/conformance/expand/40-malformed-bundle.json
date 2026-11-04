@@ -1,0 +1,14 @@
+{
+  "name": "malformed-bundle",
+  "about": "묶음의 모양이 틀리면(lock이 객체가 아님) E_FORMAT.",
+  "covers": ["bundle", "error"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": [],
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "ok"}]}
+    }
+  },
+  "runs": [{"seed": "0", "error": "E_FORMAT"}]
+}

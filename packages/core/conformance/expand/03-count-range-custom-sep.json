@@ -1,0 +1,33 @@
+{
+  "name": "count-range-custom-sep",
+  "about": "count [2,3], 구분자 ' | '. 출력은 뽑힌 순서이고 중복이 없다.",
+  "covers": ["count", "sep", "no-replacement"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "select": {"count": [2, 3], "sep": " | "},
+        "items": [
+          {"id": "a001", "text": "hat"},
+          {"id": "a002", "text": "scarf"},
+          {"id": "a003", "text": "glasses"},
+          {"id": "a004", "text": "earrings"},
+          {"id": "a005", "text": "gloves"}
+        ]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "hat | scarf"},
+    {"seed": "1", "text": "gloves | glasses | earrings"},
+    {"seed": "2", "text": "hat | scarf | glasses"},
+    {"seed": "3", "text": "earrings | gloves | hat"},
+    {"seed": "4", "text": "scarf | earrings | gloves"},
+    {"seed": "5", "text": "scarf | earrings"},
+    {"seed": "6", "text": "glasses | hat | gloves"},
+    {"seed": "7", "text": "scarf | hat | earrings"}
+  ]
+}

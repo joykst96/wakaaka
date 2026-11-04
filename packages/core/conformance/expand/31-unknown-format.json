@@ -1,0 +1,12 @@
+{
+  "name": "unknown-format",
+  "about": "모르는 묶음 format은 E_FORMAT.",
+  "covers": ["error", "bundle"],
+  "bundle": {
+    "format": 2,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {"root00000000": {"schema": 1, "items": [{"id": "i001", "text": "ok"}]}}
+  },
+  "runs": [{"seed": "0", "error": "E_FORMAT"}]
+}

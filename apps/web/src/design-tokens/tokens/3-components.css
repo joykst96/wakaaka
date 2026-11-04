@@ -1,0 +1,170 @@
+/* ==========================================================================
+   3층 · Component — 컴포넌트 토큰
+   --------------------------------------------------------------------------
+   컴포넌트의 "결정"을 이름으로 고정한다: 버튼 안쪽 여백은 몇 단계인가,
+   패널 라운드는 어느 단계인가. 2층(역할)과 1층의 스케일 이름만 참조한다.
+
+   왜 따로 두나: "버튼을 한 단계 더 둥글게"를 버튼 토큰 한 줄로 끝내기 위해서.
+   CSS 클래스(ui.css)도, React/Vue 컴포넌트도 이 토큰만 보면 같은 모양이 된다.
+
+   밀도 전환 때 간격이 다시 계산되도록 선택자에 [data-density]를 포함한다.
+
+   바깥 여백 규칙: 컴포넌트(버튼·입력·칩…)는 margin을 갖지 않는다. 컴포넌트끼리의 간격은
+   부모가 gap 또는 --field-gap / --label-gap / --action-gap으로 정한다. 컴포넌트에 margin이 있으면
+   flex 행에 넣는 순간 혼자 아래로 처진다(anima LoRA 행의 × 버튼이 그랬다).
+   ========================================================================== */
+
+:root,
+[data-density] {
+  /* ---------------- 버튼 ---------------- */
+  --button-font: var(--font-control);
+  --button-padding-y: var(--space-2_5);
+  --button-padding-x: var(--space-4);
+  --button-gap: var(--gap-sm);
+  --button-radius: var(--radius-lg);
+  --button-border-width: var(--border-width-thin);
+
+  --button-primary-bg: var(--color-accent-solid);
+  --button-primary-bg-hover: var(--color-accent-solid-hover);
+  --button-primary-bg-press: var(--color-accent-solid-press);
+  --button-primary-fg: var(--color-on-accent);
+
+  --button-secondary-bg: var(--color-bg-muted);
+  --button-secondary-bg-hover: var(--color-bg-muted-hover);
+  --button-secondary-bg-press: var(--color-bg-muted-press);
+  --button-secondary-fg: var(--color-fg);
+
+  --button-ghost-bg-hover: var(--color-bg-muted);
+  --button-ghost-bg-press: var(--color-bg-muted-press);
+  --button-ghost-fg: var(--color-fg);
+  --button-ghost-border: var(--color-border-strong);
+
+  --button-danger-bg: var(--color-danger-solid);
+  --button-danger-bg-hover: var(--color-danger-solid-hover);
+  --button-danger-bg-press: var(--color-danger-solid-press);
+  --button-danger-fg: var(--color-on-danger);
+
+  --button-disabled-bg: var(--color-bg-disabled);
+  --button-disabled-fg: var(--color-fg-disabled);
+
+  --button-sm-font: var(--font-control-sm);
+  --button-sm-padding-y: var(--space-1_5);
+  --button-sm-padding-x: var(--space-3);
+
+  /* 아이콘 버튼(톱니 등): 입력창과 같은 높이·표면 */
+  --icon-button-padding-x: var(--space-2_5);
+  --icon-button-font-size: var(--font-size-xl);
+  --icon-button-bg: var(--color-bg-sunken);
+  --icon-button-fg: var(--color-fg-muted);
+  --icon-button-fg-hover: var(--color-fg);
+  --icon-button-border: var(--color-border);
+  --icon-button-border-hover: var(--color-accent);
+  --icon-button-radius: var(--radius-md);
+
+  /* ---------------- 입력창 (input/textarea/select) ---------------- */
+  --input-font: var(--font-body);
+  --input-padding-y: var(--space-2);
+  --input-padding-x: var(--space-2_5);
+  --input-radius: var(--radius-md);
+  --input-bg: var(--color-bg-sunken);
+  --input-fg: var(--color-fg);
+  --input-placeholder: var(--color-fg-subtle);
+  --input-border: var(--color-border);
+  --input-border-focus: var(--color-accent);
+  --input-textarea-min-height: var(--space-16);
+
+  /* 작은 입력: 라벨 줄 안에 들어가는 숫자 칸 등. 높이가 --field-label-height와 같다
+     (글자 sm × 행간 normal + 위아래 여백 + 테두리 = 12×1.5 + 2×2 + 2 = 24). */
+  --input-sm-font-size: var(--font-size-sm);
+  --input-sm-padding-y: var(--space-0_5);
+  --input-sm-padding-x: var(--space-1_5);
+
+  /* 셀렉트: 브라우저 기본 화살표는 여백 토큰을 무시하고 테두리에 붙으므로 직접 그린다.
+     v의 오른쪽 여백 = 입력창 좌우 여백, 글자와 v 사이도 같은 여백. 색은 테마를 따른다. */
+  --select-chevron-size: var(--space-2_5);       /* v 전체 너비 (높이는 절반) */
+  --select-chevron-stroke: var(--border-width-icon);
+  --select-chevron-color: var(--color-fg-muted);
+  --select-padding-right: calc(var(--input-padding-x) * 2 + var(--select-chevron-size));
+
+  /* 필드 리듬 — 라벨 줄은 안에 무엇이 있든(글자만, 체크박스, 배지, 작은 입력) 같은 높이다.
+     그래서 라벨 글자와 그 아래 입력창 사이의 보이는 간격이 모든 필드에서 같다. */
+  --label-font: var(--font-label);
+  --label-fg: var(--color-fg-muted);
+  --field-label-height: var(--space-6);  /* 24 — 작은 입력·배지가 들어가도 늘지 않는 높이 */
+  --field-label-gap: var(--gap-md);      /* 라벨 줄 안 요소 사이 */
+  --label-gap: var(--gap-xs);            /* 라벨 줄 ↔ 입력창 */
+  --field-gap: var(--space-2_5);         /* 필드 ↔ 필드 (anima 실측 10) */
+  --action-gap: var(--space-3_5);        /* 필드 묶음 ↔ 그 아래 동작 버튼 */
+
+  /* ---------------- 패널 ---------------- */
+  --panel-bg: var(--color-bg-surface);
+  --panel-border: var(--color-border);
+  --panel-radius: var(--radius-xl);
+  --panel-padding: var(--inset-lg);
+  --panel-title-font: var(--font-overline);
+  --panel-title-fg: var(--color-fg-muted);
+  --panel-title-gap: var(--gap-lg);
+
+  /* ---------------- 칩 (토글형 선택지) ---------------- */
+  --chip-font: var(--font-control-sm);
+  --chip-padding-y: var(--space-1_5);
+  --chip-padding-x: var(--space-2_5);
+  --chip-gap: var(--gap-sm);
+  --chip-radius: var(--radius-pill);
+  --chip-bg: var(--color-bg-sunken);
+  --chip-fg: var(--color-fg-muted);
+  --chip-border: var(--color-border);
+  --chip-fg-hover: var(--color-fg);
+  --chip-border-hover: var(--color-accent);
+  --chip-bg-selected: var(--color-bg-selected);
+  --chip-fg-selected: var(--color-fg);
+  --chip-border-selected: var(--color-accent);
+
+  /* ---------------- 배지 (상태 표시, 비대화형) ---------------- */
+  --badge-font: var(--font-weight-semibold) var(--font-size-xs) / var(--line-height-normal) var(--font-family-sans);
+  --badge-padding-y: var(--space-0_5);
+  --badge-padding-x: var(--space-2);
+  --badge-radius: var(--radius-pill);
+
+  /* ---------------- 진행 바 ---------------- */
+  --progress-height: var(--space-1_5);
+  --progress-radius: var(--radius-pill);
+  --progress-track: var(--color-bg-sunken);
+  --progress-fill: var(--color-accent);
+  --progress-transition: width var(--transition-base);
+
+  /* ---------------- 팝오버 (자동완성 드롭다운 등) ---------------- */
+  --popover-bg: var(--color-bg-sunken);
+  --popover-border: var(--color-border);
+  --popover-radius: var(--radius-md);
+  --popover-shadow: var(--shadow-md);
+  --popover-offset: var(--space-0_5);
+  --popover-item-padding-y: var(--space-2);
+  --popover-item-padding-x: var(--space-2_5);
+  --popover-item-divider: var(--color-border-subtle);
+  --popover-item-bg-active: var(--color-bg-selected);
+
+  /* ---------------- 다이얼로그 ---------------- */
+  --dialog-width: var(--size-dialog);
+  --dialog-padding: var(--inset-lg);
+  --dialog-radius: var(--radius-xl);
+  --dialog-bg: var(--color-bg-surface);
+  --dialog-border: var(--color-border);
+  --dialog-shadow: var(--shadow-lg);
+  --dialog-backdrop: var(--color-scrim);
+  --dialog-title-font: var(--font-heading);
+
+  /* ---------------- 코드/로그 블록 ---------------- */
+  --code-block-font: var(--font-code);
+  --code-block-bg: var(--color-bg-sunken);
+  --code-block-border: var(--color-border);
+  --code-block-radius: var(--radius-md);
+  --code-block-padding-y: var(--space-2);
+  --code-block-padding-x: var(--space-2_5);
+
+  /* ---------------- 썸네일 ---------------- */
+  --thumb-size: var(--space-16);
+  --thumb-radius: var(--radius-md);
+  --thumb-border: var(--color-border);
+  --thumb-border-active: var(--color-accent);
+}

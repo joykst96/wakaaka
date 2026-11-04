@@ -1,0 +1,14 @@
+{
+  "name": "choice-weight-decimal-error",
+  "about": "소수 가중치는 문법 오류. 뽑히지 않을 항목(w 0)에 있어도 전개 전에 검사한다(SPEC 4.1).",
+  "covers": ["choice-weight", "syntax", "error"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "a", "text": "ok"}, {"id": "b", "text": "{1.5*a|b}", "w": 0}]}
+    }
+  },
+  "runs": [{"seed": "0", "error": "E_CHOICE_WEIGHT"}]
+}

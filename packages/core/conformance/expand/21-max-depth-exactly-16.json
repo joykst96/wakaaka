@@ -1,0 +1,50 @@
+{
+  "name": "max-depth-exactly-16",
+  "about": "참조 16번(문서 17개)은 기본 상한 안이다.",
+  "covers": ["depth"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {
+      "WchainOk0100": "chainOk01000",
+      "WchainOk0200": "chainOk02000",
+      "WchainOk0300": "chainOk03000",
+      "WchainOk0400": "chainOk04000",
+      "WchainOk0500": "chainOk05000",
+      "WchainOk0600": "chainOk06000",
+      "WchainOk0700": "chainOk07000",
+      "WchainOk0800": "chainOk08000",
+      "WchainOk0900": "chainOk09000",
+      "WchainOk1000": "chainOk10000",
+      "WchainOk1100": "chainOk11000",
+      "WchainOk1200": "chainOk12000",
+      "WchainOk1300": "chainOk13000",
+      "WchainOk1400": "chainOk14000",
+      "WchainOk1500": "chainOk15000",
+      "WchainOk1600": "chainOk16000"
+    },
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "d001", "text": "0>${w:WchainOk0100}"}]},
+      "chainOk01000": {"schema": 1, "items": [{"id": "d001", "text": "1>${w:WchainOk0200}"}]},
+      "chainOk02000": {"schema": 1, "items": [{"id": "d001", "text": "2>${w:WchainOk0300}"}]},
+      "chainOk03000": {"schema": 1, "items": [{"id": "d001", "text": "3>${w:WchainOk0400}"}]},
+      "chainOk04000": {"schema": 1, "items": [{"id": "d001", "text": "4>${w:WchainOk0500}"}]},
+      "chainOk05000": {"schema": 1, "items": [{"id": "d001", "text": "5>${w:WchainOk0600}"}]},
+      "chainOk06000": {"schema": 1, "items": [{"id": "d001", "text": "6>${w:WchainOk0700}"}]},
+      "chainOk07000": {"schema": 1, "items": [{"id": "d001", "text": "7>${w:WchainOk0800}"}]},
+      "chainOk08000": {"schema": 1, "items": [{"id": "d001", "text": "8>${w:WchainOk0900}"}]},
+      "chainOk09000": {"schema": 1, "items": [{"id": "d001", "text": "9>${w:WchainOk1000}"}]},
+      "chainOk10000": {"schema": 1, "items": [{"id": "d001", "text": "10>${w:WchainOk1100}"}]},
+      "chainOk11000": {"schema": 1, "items": [{"id": "d001", "text": "11>${w:WchainOk1200}"}]},
+      "chainOk12000": {"schema": 1, "items": [{"id": "d001", "text": "12>${w:WchainOk1300}"}]},
+      "chainOk13000": {"schema": 1, "items": [{"id": "d001", "text": "13>${w:WchainOk1400}"}]},
+      "chainOk14000": {"schema": 1, "items": [{"id": "d001", "text": "14>${w:WchainOk1500}"}]},
+      "chainOk15000": {"schema": 1, "items": [{"id": "d001", "text": "15>${w:WchainOk1600}"}]},
+      "chainOk16000": {"schema": 1, "items": [{"id": "d001", "text": "end{A|B}"}]}
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "0>1>2>3>4>5>6>7>8>9>10>11>12>13>14>15>endA"},
+    {"seed": "1", "text": "0>1>2>3>4>5>6>7>8>9>10>11>12>13>14>15>endA"}
+  ]
+}

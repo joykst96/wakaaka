@@ -1,0 +1,12 @@
+{
+  "name": "choice-weight-all-zero-error",
+  "about": "모든 보기의 가중치가 0이면 문법 오류.",
+  "covers": ["choice-weight", "syntax", "error"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {"root00000000": {"schema": 1, "items": [{"id": "a", "text": "{0*a|0*b}"}]}}
+  },
+  "runs": [{"seed": "0", "error": "E_CHOICE_WEIGHT"}]
+}

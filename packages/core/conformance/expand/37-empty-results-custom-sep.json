@@ -1,0 +1,29 @@
+{
+  "name": "empty-results-custom-sep",
+  "about": "06과 같은 문서에 sep만 ' | '로 바꿨다. 쉼표 정리가 닿지 않는 구분자에서도 빈 결과에는 구분자를 붙이지 않는다. sep은 뽑기와 무관하므로 결과는 06의 ', '를 ' | '로 바꾼 것이다.",
+  "covers": ["empty", "sep"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "select": {"count": [0, 2], "sep": " | "},
+        "items": [{"id": "none", "text": "", "w": 3}, {"id": "a001", "text": "hat"}, {"id": "a002", "text": "{scarf|}"}]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "hat | scarf"},
+    {"seed": "1", "text": "hat"},
+    {"seed": "2", "text": "hat"},
+    {"seed": "3", "text": ""},
+    {"seed": "4", "text": ""},
+    {"seed": "5", "text": ""},
+    {"seed": "6", "text": ""},
+    {"seed": "7", "text": ""},
+    {"seed": "8", "text": "scarf"},
+    {"seed": "9", "text": ""}
+  ]
+}
