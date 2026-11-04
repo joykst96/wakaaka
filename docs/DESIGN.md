@@ -276,7 +276,7 @@ SELECT d.wildcard_id, d.hash, c.doc FROM deps d JOIN wc_content c USING (hash); 
   - 서버 모드도 성공한 뒤 그 버전의 묶음을 백그라운드로 받아 캐시하고, 서버에 연결할 수 없으면 캐시로 로컬 전개한다(사용자 결정, 2026-11-03). `follow_latest`가 켜져 있으면 마지막으로 받은 최신 lock을 쓴다.
   - 로컬 모드에서 고정 lock의 문서가 모두 캐시에 있으면 서버를 부르지 않는다. 옛 버전이라 `/bundle`(최신)로 받을 수 없으면 `/resolve`로 받는다.
   - 연결에 실패하면 10초 동안 그 서버를 부르지 않는다(훅이 ComfyUI 이벤트 루프를 막으므로).
-- Python 전개기는 노드용으로 따로 둔다(`comfy-node/wakaaka_node/expander.py`). 참조 모델은 공통 테스트 세트의 독립 기준으로 남긴다(사용자 결정, 2026-11-03).
+- Python 전개기는 노드용으로 따로 둔다(노드 저장소 `joykst96/comfyui-wakaaka`의 `wakaaka_node/expander.py`). 참조 모델은 공통 테스트 세트의 독립 기준으로 남긴다(사용자 결정, 2026-11-03).
 - 앞뒤 고정 텍스트를 붙이는 기능은 두지 않는다. 품질 태그를 포함한 "장면 프리셋" 와일드카드를 웹에서 만들거나, KJNodes의 문자열 연결 노드를 쓴다. 네거티브는 노드를 하나 더 놓는다.
 - 큐를 여러 개 넣으면 ComfyUI가 각각 따로 실행한다. 대량 생성에는 묶음을 한 번만 받는 로컬 모드를 권장한다.
 - 출시 순서: 서버 모드만 있는 노드 → 로컬 전개기(공통 테스트 세트 통과 후).
@@ -331,7 +331,7 @@ SELECT d.wildcard_id, d.hash, c.doc FROM deps d JOIN wc_content c USING (hash); 
 - TypeScript: Hono(API) + Vite/React(웹) + CodeMirror 6(편집기) + Kysely(SQL) + zod(스키마, `core`에서 공유)
 - PostgreSQL(`pg_trgm`으로 태그 자동완성)
 - Python: ComfyUI 노드
-- npm workspaces 모노레포: `packages/core`, `apps/api`, `apps/web`, `comfy-node`(Python, 워크스페이스 아님), `deploy`
+- npm workspaces 모노레포: `packages/core`, `apps/api`, `apps/web`, `deploy`. ComfyUI 노드는 별도 저장소 `joykst96/comfyui-wakaaka`(2026-11-04 분리, 공통 테스트 세트는 사본을 두고 출처 커밋을 적는다)
 - 배포: 서버에서 docker compose(`app`, `postgres`). 터널은 compose에 두지 않고 서버 호스트의 systemd cloudflared(ingress 설정 파일)에 호스트 이름을 더해 쓴다(사용자 결정, 2026-11-04. 서버의 다른 서비스와 같은 방식). 아래 "운영 배포".
 
 ### 디자인 토큰

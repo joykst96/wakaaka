@@ -1,7 +1,7 @@
 # @wakaaka/core
 
 와일드카드 문서 스키마(zod), 인라인 문법 파서, 전개기, 난수·하위 seed, 내용 해시.
-웹 미리보기와 API가 함께 쓴다. `conformance/`의 공통 테스트 세트는 Python 노드도 같이 돌린다. 명세는 `docs/SPEC.md`.
+웹 미리보기와 API가 함께 쓴다. `conformance/`의 공통 테스트 세트는 Python 노드(`joykst96/comfyui-wakaaka`)도 사본으로 같이 돌린다. 명세는 `docs/SPEC.md`.
 
 | 파일 | 내용 | 명세 |
 |---|---|---|

@@ -1,6 +1,6 @@
 # 공통 테스트 세트 (conformance)
 
-TS 전개기(`packages/core`)와 Python 전개기(`comfy-node`)가 둘 다 통과해야 하는 테스트다. 명세는 `docs/SPEC.md`.
+TS 전개기(`packages/core`)와 Python 전개기(별도 저장소 `joykst96/comfyui-wakaaka`의 `tests/conformance`에 이 폴더의 사본)가 둘 다 통과해야 하는 테스트다. 명세는 `docs/SPEC.md`.
 명세를 바꿀 때는 이 테스트 세트를 먼저 고친다.
 
 | 파일 | 내용 | 명세 |

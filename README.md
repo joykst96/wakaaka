@@ -20,9 +20,13 @@
 
 ## ComfyUI 노드
 
-[comfy-node](comfy-node) 폴더를 `ComfyUI/custom_nodes/wakaaka`로 복사하고 ComfyUI를 다시 시작한다. 설치할 Python 패키지는 없다.
+노드는 별도 저장소 [joykst96/comfyui-wakaaka](https://github.com/joykst96/comfyui-wakaaka)에 있다. `ComfyUI/custom_nodes`에서 clone하고 ComfyUI를 다시 시작한다. 설치할 Python 패키지는 없다.
 
-**Wakaaka Wildcard** 노드에 와일드카드 ID(또는 웹 주소)를 넣고 출력 `text`를 `CLIPTextEncode`에 잇는다. 큐에 넣을 때 결과와 lock이 PNG 워크플로에 남아 나중에 같은 결과를 다시 만들 수 있다. 서버에 연결할 수 없으면 캐시로 전개한다. 자세한 것은 [comfy-node/README.md](comfy-node/README.md).
+```bash
+git clone https://github.com/joykst96/comfyui-wakaaka
+```
+
+**Wakaaka Wildcard** 노드에 와일드카드 ID(또는 웹 주소)를 넣고 출력 `text`를 `CLIPTextEncode`에 잇는다. 큐에 넣을 때 결과와 lock이 PNG 워크플로에 남아 나중에 같은 결과를 다시 만들 수 있다. 서버에 연결할 수 없으면 캐시로 전개한다. 자세한 것은 노드 저장소의 README.
 
 ## 구조
 
@@ -31,7 +35,6 @@
 | [`packages/core`](packages/core) | 문서 스키마, 파서, 전개기, 내용 해시, 공통 테스트 세트(`conformance/`) |
 | [`apps/api`](apps/api) | Hono API 서버 (PostgreSQL, Kysely) |
 | [`apps/web`](apps/web) | Vite + React + CodeMirror 6 편집기와 대시보드 |
-| [`comfy-node`](comfy-node) | ComfyUI 커스텀 노드 (Python 표준 라이브러리만) |
 | [`deploy`](deploy) | Dockerfile, docker compose, 배포·백업 스크립트 |
 | [`fixtures`](fixtures) | 예시 와일드카드 재료(분야별 태그 CSV)와 생성기 |
 | [`docs`](docs) | 설계([DESIGN.md](docs/DESIGN.md))와 명세([SPEC.md](docs/SPEC.md)) |
@@ -78,11 +81,7 @@ npm test
 
 타입 검사, 스타일 검사, vitest를 돌린다. API 테스트는 위의 로컬 Postgres가 떠 있어야 한다.
 
-ComfyUI 노드와 Python 전개기는 ComfyUI가 쓰는 Python으로 돌린다.
-
-```bash
-python -I -m unittest discover -s comfy-node/tests -t comfy-node
-```
+Python 전개기(노드 저장소)는 공통 테스트 세트의 사본으로 돈다. 이 저장소의 세트를 바꿨으면 노드 저장소에서 이 세트로 돌려 본 뒤 사본을 갱신한다(노드 저장소 `tests/conformance/SOURCE.md`).
 
 ### 배포
 
