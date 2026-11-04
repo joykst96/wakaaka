@@ -129,6 +129,38 @@ describe("둘러보기", () => {
     expect(names(await bob.get("/api/explore?sort=recent")).sort()).toEqual(["leaf", "root"]);
   });
 
+  it("고친 복사본은 나온다. 분류만 바꾸거나 되돌린 것은 안 나온다", async () => {
+    const leaf = await alice.create(doc("leaf", [item("a", "1")]));
+    const root = await alice.create(doc("root", [item("a", W(leaf))]));
+    const r = await bob.post(`/api/wildcards/${root}/import`);
+    expect(r.status).toBe(201);
+    const copy = r.body.root as string;
+    const copyLeaf = (r.body.created as Array<{ id: string }>).find((c) => c.id !== copy)!.id;
+    const recent = async () => names(await bob.get("/api/explore?sort=recent")).sort();
+    const first = (await bob.get(`/api/wildcards/${copy}`)).body.doc;
+
+    // 같은 내용으로 저장(새 버전 없음), 분류만 바꾸기: 고친 것이 아니다
+    await bob.put(`/api/wildcards/${copy}`, { doc: first });
+    await bob.put(`/api/wildcards/${copy}`, { doc: first, categories: [3] });
+    expect(await recent()).toEqual(["leaf", "root"]);
+
+    // 내용을 고치면 나온다. 원작자 표시가 붙고, 고치지 않은 하위 복사본은 그대로 빠진다
+    const edited = { ...first, items: [...first.items, item("b", "2")] };
+    expect((await bob.put(`/api/wildcards/${copy}`, { doc: edited })).body.seq).toBe(2);
+    const cards = (await bob.get("/api/explore?sort=recent")).body.wildcards as Array<{ id: string; owner: string; forkedFrom: { owner: string } | null }>;
+    expect(cards.map((c) => [c.id, c.owner, c.forkedFrom?.owner ?? null])).toEqual([
+      [copy, "bob", "alice"],
+      [root, "alice", null],
+      [leaf, "alice", null],
+    ]);
+    expect(cards.some((c) => c.id === copyLeaf)).toBe(false);
+    expect(names(await bob.get("/api/explore?q=root")).length).toBe(2);
+
+    // 가져온 직후 내용으로 되돌리면 다시 빠진다
+    expect((await bob.put(`/api/wildcards/${copy}`, { doc: first })).body.seq).toBe(3);
+    expect(await recent()).toEqual(["leaf", "root"]);
+  });
+
   it("q는 이름·설명에서 대소문자 무시 부분 일치", async () => {
     await alice.create(doc("Hair Color", [item("a", "1")]));
     await alice.create(doc("eyes", [item("a", "1")], { description: "눈 색 HAIR와 무관" }));

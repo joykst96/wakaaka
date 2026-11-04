@@ -69,7 +69,7 @@ export function ExplorePage() {
       {error && <p className="text-danger">{error}</p>}
       {cards === null && !error && <p className="text-muted">불러오는 중…</p>}
       {cards?.length === 0 && <p className="text-muted">맞는 와일드카드가 없습니다</p>}
-      <CardGrid cards={cards ?? []} />
+      <CardGrid cards={cards ?? []} showOrigin />
       {next !== null && (
         <button type="button" className="btn btn-secondary" onClick={() => void more()}>
           더 보기

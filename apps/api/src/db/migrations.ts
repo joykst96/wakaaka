@@ -180,7 +180,27 @@ const m0004: Migration = {
   },
 };
 
-export const migrations: Record<string, Migration> = { "0001_init": m0001, "0002_social": m0002, "0003_tags": m0003, "0004_admin": m0004 };
+// 둘러보기에 고친 복사본도 나온다(사용자 결정 2026-11-04). 인기순 부분 색인의 조건을 넓힌다.
+// "1번 버전과 해시가 다름"은 하위 쿼리라 색인 조건에 못 넣으므로 latest_seq > 1까지만 넣는다
+const m0005: Migration = {
+  async up(db: Kysely<any>) {
+    await db.schema.dropIndex("wildcard_popular").execute();
+    await db.schema
+      .createIndex("wildcard_popular")
+      .on("wildcard")
+      .columns(["like_count desc", "id"])
+      .where(sql<boolean>`deleted_at is null and (forked_from_wildcard is null or latest_seq > 1)`)
+      .execute();
+  },
+};
+
+export const migrations: Record<string, Migration> = {
+  "0001_init": m0001,
+  "0002_social": m0002,
+  "0003_tags": m0003,
+  "0004_admin": m0004,
+  "0005_explore_edited_copies": m0005,
+};
 
 /**
  * schema는 마이그레이션 기록 테이블이 있는 스키마다. 테이블 자체는 연결의 search_path에 만들어진다.

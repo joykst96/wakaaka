@@ -31,9 +31,23 @@ export interface ExploreQuery {
   viewerId: string | null;
 }
 
-/** 둘러보기: 지우지 않은 원본만(가져온 복사본 제외, DESIGN 11절). q는 이름·설명 부분 일치, cats는 하나라도 겹치면 */
+/**
+ * 둘러보기: 지우지 않은 원본과, 가져온 뒤 내용을 고친 복사본(DESIGN 11절).
+ * 고쳤다 = 최신 버전 해시가 가져온 직후의 1번 버전과 다르다. 분류만 바꾸거나 되돌린 복사본은 빠진다.
+ * q는 이름·설명 부분 일치, cats는 하나라도 겹치면
+ */
 export async function explore(db: Db, x: ExploreQuery): Promise<CardRow[]> {
-  let q = withViewer(db, x.viewerId).where("w.deleted_at", "is", null).where("w.forked_from_wildcard", "is", null);
+  let q = withViewer(db, x.viewerId)
+    .where("w.deleted_at", "is", null)
+    .where((eb) =>
+      eb.or([
+        eb("w.forked_from_wildcard", "is", null),
+        eb.and([
+          eb("w.latest_seq", ">", 1),
+          eb("v.hash", "<>", eb.selectFrom("wc_version as v1").select("v1.hash").whereRef("v1.wildcard_id", "=", "w.id").where("v1.seq", "=", 1)),
+        ]),
+      ]),
+    );
   if (x.q !== null) {
     const pattern = "%" + escapeLike(x.q) + "%";
     q = q.where((eb) => eb.or([eb("w.name", "ilike", pattern), eb("w.description", "ilike", pattern)]));
