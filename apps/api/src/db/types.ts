@@ -43,8 +43,17 @@ export interface WildcardTable {
   description: Generated<string>;
   /** 둘러보기 예시 출력. 전개가 실패하면 null */
   example: ColumnType<string | null, string | null | undefined, string | null>;
+  /** 0007. 나만 보는 폴더(DESIGN 11절 "폴더"). NULL = 폴더 없음. 공개 응답에는 넣지 않는다 */
+  folder_id: ColumnType<string | null, string | null | undefined, string | null>;
   created_at: Generated<Date>;
   deleted_at: Date | null;
+}
+
+export interface WcFolderTable {
+  id: string;
+  owner_id: string;
+  name: string;
+  created_at: Generated<Date>;
 }
 
 export interface WcVersionTable {
@@ -125,4 +134,5 @@ export interface DB {
   wc_ref: WcRefTable;
   favorite: FavoriteTable;
   wc_like: WcLikeTable;
+  wc_folder: WcFolderTable;
 }

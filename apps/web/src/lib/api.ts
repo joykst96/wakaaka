@@ -92,6 +92,13 @@ export interface ImportResult {
   dryRun: boolean;
 }
 
+/** 나만 보는 폴더 (DESIGN 11절 "폴더"). wildcards는 든 와일드카드 ID(이름순) */
+export interface Folder {
+  id: string;
+  name: string;
+  wildcards: string[];
+}
+
 /** 태그 자동완성 후보 (DESIGN 7절 "태그 자동완성") */
 export interface TagSuggestion {
   name: string;
@@ -118,6 +125,13 @@ export const api = {
   remove: (id: string) => call<{ ok: true }>("DELETE", `/api/wildcards/${enc(id)}`),
   importWildcard: (id: string, dryRun: boolean) => call<ImportResult>("POST", `/api/wildcards/${enc(id)}/import` + (dryRun ? "?dryRun=1" : "")),
   like: (id: string, on: boolean) => call<{ liked: boolean; likes: number }>(on ? "PUT" : "DELETE", `/api/wildcards/${enc(id)}/like`),
+
+  folders: () => call<{ folders: Folder[] }>("GET", "/api/folders"),
+  createFolder: (name: string) => call<Folder>("POST", "/api/folders", { name }),
+  renameFolder: (id: string, name: string) => call<{ id: string; name: string }>("PUT", `/api/folders/${enc(id)}`, { name }),
+  deleteFolder: (id: string) => call<{ ok: true; moved: number }>("DELETE", `/api/folders/${enc(id)}`),
+  /** folder가 null이면 "폴더 없음"으로 */
+  moveToFolder: (folder: string | null, wildcards: string[]) => call<{ folder: string | null; moved: number }>("POST", "/api/folders/move", { folder, wildcards }),
 
   favorites: () => call<{ favorites: Card[] }>("GET", "/api/favorites"),
   favorite: (id: string, on: boolean) =>

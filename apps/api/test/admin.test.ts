@@ -228,7 +228,7 @@ describe("계정 삭제", () => {
     await fixture();
     const before = await snapshot();
     const out = await admin("delete-account", "ALICE");
-    expect(out[0]).toBe("would delete account alice: wildcards 4, sessions 1, favorites 0, likes given 0");
+    expect(out[0]).toBe("would delete account alice: wildcards 4, sessions 1, favorites 0, likes given 0, folders 0");
     expect(await snapshot()).toEqual(before);
     expect((await alice.get("/api/me")).status).toBe(200);
   });
@@ -246,7 +246,7 @@ describe("계정 삭제", () => {
     expect(likesBefore).toBe(1);
 
     const out = await admin("delete-account", "alice", "--yes");
-    expect(out[0]).toBe("deleted account alice: wildcards 4, sessions 2, favorites 1, likes given 1");
+    expect(out[0]).toBe("deleted account alice: wildcards 4, sessions 2, favorites 1, likes given 1, folders 0");
 
     for (const c of [alice, alice2]) expect((await c.get("/api/me")).status).toBe(401);
     // 쿠키를 그대로 들고 와도 쓰기는 401

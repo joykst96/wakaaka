@@ -9,6 +9,7 @@ import { Sidebar } from "./components/Sidebar.tsx";
 import { TabBar } from "./components/TabBar.tsx";
 import { LoginPage, SettingsPage, SignupPage, UserPage } from "./pages/AccountPages.tsx";
 import { ExplorePage } from "./pages/ExplorePage.tsx";
+import { FoldersPage } from "./pages/FoldersPage.tsx";
 import { WildcardPage } from "./pages/WildcardPage.tsx";
 
 export function App() {
@@ -49,6 +50,9 @@ function Shell() {
       break;
     case "settings":
       page = <SettingsPage />;
+      break;
+    case "folders":
+      page = <FoldersPage view={route.folder} />;
       break;
     default:
       page = <p className="page-pad">페이지를 찾을 수 없습니다.</p>;

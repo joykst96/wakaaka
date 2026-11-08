@@ -11,6 +11,7 @@ DB(PostgreSQL)는 이 서버에서만 접근한다. 빌드 없이 Node 22가 `.t
 | `src/services/wildcards.ts` | 생성, 새 버전, 삭제, 조회, 가져오기, 둘러보기 예시 출력(저장할 때 seed 0) |
 | `src/services/bundle.ts` | 노드용 묶음, lock, resolve, Impact Pack 내보내기(`/api/w/{id}/export?format=impact`) |
 | `src/services/social.ts`, `src/repositories/social.ts` | 즐겨찾기, 좋아요, 둘러보기(검색·분류·정렬), 여러 ID 조회, 사용자별 목록 |
+| `src/services/folders.ts`, `src/repositories/folders.ts` | 나만 보는 폴더(DESIGN 11절 "폴더"): 만들기, 이름 바꾸기, 지우기, 옮기기, 소유자 검사 |
 | `src/services/seed.ts`, `src/seed.ts` | `fixtures/` 예시 시드 |
 | `src/db/migrations.ts` | 스키마(DESIGN 6절) |
 
