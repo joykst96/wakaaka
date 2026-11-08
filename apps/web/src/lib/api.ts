@@ -92,7 +92,7 @@ export interface ImportResult {
   dryRun: boolean;
 }
 
-/** 나만 보는 폴더 (DESIGN 11절 "폴더"). wildcards는 든 와일드카드 ID(이름순) */
+/** 나만 보는 폴더 (DESIGN 11절 "폴더"). 목록은 사용자가 정한 순서. wildcards는 든 와일드카드 ID(이름순) */
 export interface Folder {
   id: string;
   name: string;
@@ -127,7 +127,8 @@ export const api = {
   like: (id: string, on: boolean) => call<{ liked: boolean; likes: number }>(on ? "PUT" : "DELETE", `/api/wildcards/${enc(id)}/like`),
 
   folders: () => call<{ folders: Folder[] }>("GET", "/api/folders"),
-  createFolder: (name: string) => call<Folder>("POST", "/api/folders", { name }),
+  /** after가 있으면 그 폴더 바로 다음 자리, 없으면 맨 끝 */
+  createFolder: (name: string, after?: string) => call<Folder>("POST", "/api/folders", after === undefined ? { name } : { name, after }),
   renameFolder: (id: string, name: string) => call<{ id: string; name: string }>("PUT", `/api/folders/${enc(id)}`, { name }),
   deleteFolder: (id: string) => call<{ ok: true; moved: number }>("DELETE", `/api/folders/${enc(id)}`),
   /** folder가 null이면 "폴더 없음"으로 */

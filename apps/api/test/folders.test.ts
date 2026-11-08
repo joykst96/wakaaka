@@ -1,10 +1,15 @@
 // 나만 보는 폴더 (DESIGN 11절 "폴더", 사용자 결정 2026-11-08): 한 단계, 와일드카드마다 폴더 하나, 소유자 검사,
 // 지우면 "폴더 없음"으로, 새 버전 없음, 가져온 복사본은 "폴더 없음", 공개 응답에는 폴더 정보가 없다.
 
+import { randomBytes } from "node:crypto";
+import { sql } from "kysely";
+import { Migrator } from "kysely/migration";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runAdmin } from "../src/admincli.ts";
+import { createDb } from "../src/db/connect.ts";
+import { migrations } from "../src/db/migrations.ts";
 import { FOLDER_MAX, MOVE_MAX } from "../src/services/folders.ts";
-import { Client, doc, setupEnv, W, type TestEnv } from "./helpers.ts";
+import { Client, doc, setupEnv, TEST_DATABASE_URL, W, type TestEnv } from "./helpers.ts";
 
 let env: TestEnv;
 let alice: Client;
@@ -20,8 +25,8 @@ afterEach(async () => {
 
 const one = (name: string, text = "x") => doc(name, [{ id: "a", text }]);
 
-async function folder(c: Client, name: string): Promise<string> {
-  const r = await c.post("/api/folders", { name });
+async function folder(c: Client, name: string, after?: string): Promise<string> {
+  const r = await c.post("/api/folders", after === undefined ? { name } : { name, after });
   if (r.status !== 201) throw new Error(`folder failed: ${r.status} ${r.text}`);
   return r.body.id as string;
 }
@@ -39,7 +44,7 @@ async function admin(...argv: string[]) {
 }
 
 describe("만들기, 목록, 이름 바꾸기, 지우기", () => {
-  it("폴더는 이름순이고 든 와일드카드 ID를 이름순으로 준다", async () => {
+  it("폴더는 만든 자리 순서(after가 없으면 맨 끝)이고 든 와일드카드 ID를 이름순으로 준다", async () => {
     const z = await alice.create(one("zeta"));
     const a = await alice.create(one("Alpha"));
     const m = await alice.create(one("mid"));
@@ -47,13 +52,13 @@ describe("만들기, 목록, 이름 바꾸기, 지우기", () => {
     const fa = await folder(alice, "Apple");
     expect((await alice.get("/api/folders")).body).toEqual({
       folders: [
-        { id: fa, name: "Apple", wildcards: [] },
         { id: fb, name: "배경", wildcards: [] },
+        { id: fa, name: "Apple", wildcards: [] },
       ],
     });
     expect((await move(alice, fb, [z, a])).body).toEqual({ folder: fb, moved: 2 });
     const l = (await alice.get("/api/folders")).body.folders;
-    expect(l[1]).toEqual({ id: fb, name: "배경", wildcards: [a, z] });
+    expect(l[0]).toEqual({ id: fb, name: "배경", wildcards: [a, z] });
     expect(await folderOf(m)).toBeNull();
   });
 
@@ -85,6 +90,120 @@ describe("만들기, 목록, 이름 바꾸기, 지우기", () => {
     expect(await folderOf(gone)).toBeNull();
     expect((await alice.get("/api/wildcards")).body.wildcards.map((w: any) => w.name)).toEqual(["x", "y"]);
     expect((await alice.get(`/api/wildcards/${x}`)).status).toBe(200);
+  });
+});
+
+describe("만드는 자리 (after, 0008)", () => {
+  const names = async (c: Client) => (await c.get("/api/folders")).body.folders.map((f: any) => f.name);
+  const positions = async () => (await env.db.selectFrom("wc_folder").select(["name", "position"]).orderBy("position").execute()).map((r) => `${r.name}:${r.position}`);
+
+  it("after가 있으면 그 폴더 바로 다음, 없으면 맨 끝. 첫째·가운데·마지막 다음 모두", async () => {
+    const a = await folder(alice, "a");
+    const c = await folder(alice, "c");
+    await folder(alice, "b", a);
+    expect(await names(alice)).toEqual(["a", "b", "c"]);
+    await folder(alice, "d", c); // 마지막 다음 = 맨 끝
+    await folder(alice, "a2", a);
+    await folder(alice, "end");
+    expect(await names(alice)).toEqual(["a", "a2", "b", "c", "d", "end"]);
+    // 뒤 폴더만 한 칸씩 밀린다. 번호는 사용자 안에서 겹치지 않는다
+    expect(await positions()).toEqual(["a:0", "a2:1", "b:2", "c:3", "d:4", "end:5"]);
+  });
+
+  it("지운 자리의 빈 번호가 있어도 순서가 맞다. 다른 사용자의 순서와는 따로다", async () => {
+    const a = await folder(alice, "a");
+    const b = await folder(alice, "b");
+    await folder(alice, "c");
+    await alice.del(`/api/folders/${b}`);
+    await folder(alice, "x", a);
+    await folder(alice, "y");
+    expect(await names(alice)).toEqual(["a", "x", "c", "y"]);
+    const bob1 = await folder(bob, "b1");
+    await folder(bob, "b0", bob1);
+    expect(await names(bob)).toEqual(["b1", "b0"]);
+    expect(await names(alice)).toEqual(["a", "x", "c", "y"]);
+  });
+
+  it("남의 폴더·없는 폴더·형식이 틀린 after는 404이고 아무것도 만들지 않는다. 문자열이 아니면 400", async () => {
+    const mine = await folder(alice, "mine");
+    const theirs = await folder(bob, "theirs");
+    for (const after of [theirs, "AAAAAAAAAAAA", "short", ""]) {
+      const r = await alice.post("/api/folders", { name: "n", after });
+      expect(r.status, after).toBe(404);
+      expect(r.body.error.code).toBe("E_FOLDER_NOT_FOUND");
+    }
+    for (const after of [null, 1, [mine]]) expect((await alice.post("/api/folders", { name: "n", after })).status).toBe(400);
+    expect(await names(alice)).toEqual(["mine"]);
+    expect(await names(bob)).toEqual(["theirs"]);
+  });
+
+  it("이름이 겹쳐 409이면 뒤 폴더도 밀리지 않는다(한 트랜잭션)", async () => {
+    const a = await folder(alice, "a");
+    await folder(alice, "b");
+    const r = await alice.post("/api/folders", { name: "B", after: a });
+    expect(r.status).toBe(409);
+    expect(await positions()).toEqual(["a:0", "b:1"]);
+  });
+
+  it("동시에 같은 자리에 만들어도 번호가 겹치지 않는다", async () => {
+    const a = await folder(alice, "a");
+    await folder(alice, "z");
+    const rs = await Promise.all(Array.from({ length: 6 }, (_, i) => alice.post("/api/folders", { name: `n${i}`, after: a })));
+    expect(rs.map((r) => r.status)).toEqual(Array(6).fill(201));
+    const ps = (await env.db.selectFrom("wc_folder").select("position").execute()).map((r) => r.position).sort((x, y) => x - y);
+    expect(ps).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    const n = await names(alice);
+    expect(n[0]).toBe("a");
+    expect(n.at(-1)).toBe("z");
+  });
+
+  it("0008은 기존 폴더에 그때 보이던 순서(ORDER BY name, id) 그대로 번호를 매긴다", async () => {
+    // 0007까지만 올린 스키마에 폴더를 넣고 0008을 올린다
+    const schema = "t_" + randomBytes(6).toString("hex");
+    const admin = createDb(TEST_DATABASE_URL, { max: 1 });
+    await sql`create schema ${sql.id(schema)}`.execute(admin);
+    await admin.destroy();
+    const db = createDb(TEST_DATABASE_URL, { searchPath: schema, max: 2 });
+    try {
+      const migrator = new Migrator({ db, provider: { getMigrations: async () => migrations }, migrationTableSchema: schema });
+      const r7 = await migrator.migrateTo("0007_folders");
+      expect(r7.error).toBeUndefined();
+      const owner = async (username: string) => (await sql<{ id: string }>`insert into owner (username, pw_hash) values (${username}, 'x') returning id`.execute(db)).rows[0]!.id;
+      const o1 = await owner("o1");
+      const o2 = await owner("o2");
+      // 대소문자·한글·숫자·기호가 섞인 이름. 만든 순서는 일부러 뒤섞는다
+      const seed: Array<[string, string, string]> = [
+        ["Zzzzzzzzzzz1", o1, "zeta"],
+        ["Aaaaaaaaaaa1", o1, "배경"],
+        ["Mmmmmmmmmmm1", o1, "Alpha"],
+        ["Bbbbbbbbbbb1", o1, "alpha2"],
+        ["Ccccccccccc1", o1, "10 숫자"],
+        ["Ddddddddddd1", o1, "_기호"],
+        ["Eeeeeeeeeee1", o2, "b"],
+        ["Fffffffffff1", o2, "a"],
+      ];
+      for (const [id, o, name] of seed) await sql`insert into wc_folder (id, owner_id, name) values (${id}, ${o}, ${name})`.execute(db);
+      // 0007 코드의 listFolders와 같은 쿼리
+      const before = async (o: string) => (await sql<{ id: string }>`select id from wc_folder where owner_id = ${o} order by name, id`.execute(db)).rows.map((r) => r.id);
+      const b1 = await before(o1);
+      const b2 = await before(o2);
+      const r8 = await migrator.migrateToLatest();
+      expect(r8.error).toBeUndefined();
+      expect(r8.results?.map((r: { migrationName: string }) => r.migrationName)).toContain("0008_folder_position");
+      const after = async (o: string) => db.selectFrom("wc_folder").select(["id", "position"]).where("owner_id", "=", o).orderBy("position").execute();
+      const a1 = await after(o1);
+      const a2 = await after(o2);
+      expect(a1.map((r) => r.id)).toEqual(b1);
+      expect(a2.map((r) => r.id)).toEqual(b2);
+      expect(a1.map((r) => r.position)).toEqual([0, 1, 2, 3, 4, 5]);
+      expect(a2.map((r) => r.position)).toEqual([0, 1]);
+      // NOT NULL, 사용자 안 유일(커밋 때 검사)
+      await expect(sql`insert into wc_folder (id, owner_id, name) values ('Ggggggggggg1', ${o1}, 'n')`.execute(db)).rejects.toMatchObject({ code: "23502" });
+      await expect(sql`insert into wc_folder (id, owner_id, name, position) values ('Ggggggggggg1', ${o1}, 'n', 0)`.execute(db)).rejects.toMatchObject({ code: "23505" });
+      expect((await sql`insert into wc_folder (id, owner_id, name, position) values ('Ggggggggggg1', ${o2}, 'n', 2)`.execute(db)).numAffectedRows).toBe(1n);
+    } finally {
+      await db.destroy();
+    }
   });
 });
 
@@ -120,7 +239,7 @@ describe("이름 규칙과 상한", () => {
     const owner = await env.db.selectFrom("owner").select("id").where("username", "=", "alice").executeTakeFirstOrThrow();
     await env.db
       .insertInto("wc_folder")
-      .values(Array.from({ length: FOLDER_MAX - 1 }, (_, i) => ({ id: ("f" + String(i).padStart(11, "0")).slice(0, 12), owner_id: owner.id, name: `f${i}` })))
+      .values(Array.from({ length: FOLDER_MAX - 1 }, (_, i) => ({ id: ("f" + String(i).padStart(11, "0")).slice(0, 12), owner_id: owner.id, name: `f${i}`, position: i })))
       .execute();
     expect((await alice.post("/api/folders", { name: "last" })).status).toBe(201);
     const r = await alice.post("/api/folders", { name: "over" });

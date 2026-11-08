@@ -54,6 +54,8 @@ export interface WcFolderTable {
   owner_id: string;
   name: string;
   created_at: Generated<Date>;
+  /** 0008. 사용자가 정한 순서(작을수록 위). 사용자 안에서 유일, 빈 번호 허용 */
+  position: number;
 }
 
 export interface WcVersionTable {

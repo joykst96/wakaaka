@@ -5,11 +5,12 @@ import type { Db } from "../db/connect.ts";
 export interface FolderRow {
   id: string;
   name: string;
+  position: number;
 }
 
-/** ownerId의 폴더. 이름순(내 와일드카드 목록과 같은 ORDER BY name), 같으면 ID */
+/** ownerId의 폴더. 사용자가 정한 순서(position, 0008). position은 사용자 안에서 유일하지만 읽는 사람을 위해 ID도 붙인다 */
 export async function listFolders(db: Db, ownerId: string): Promise<FolderRow[]> {
-  return db.selectFrom("wc_folder").select(["id", "name"]).where("owner_id", "=", ownerId).orderBy("name").orderBy("id").execute();
+  return db.selectFrom("wc_folder").select(["id", "name", "position"]).where("owner_id", "=", ownerId).orderBy("position").orderBy("id").execute();
 }
 
 /** ownerId의 지우지 않은 와일드카드 중 폴더에 든 것. 폴더 안 순서는 내 목록과 같은 이름순 */
@@ -32,11 +33,27 @@ export async function countFolders(db: Db, ownerId: string): Promise<number> {
 
 /** 내 폴더 하나. 남의 것이면 없는 것과 같다 */
 export async function getFolder(db: Db, ownerId: string, id: string): Promise<FolderRow | undefined> {
-  return db.selectFrom("wc_folder").select(["id", "name"]).where("owner_id", "=", ownerId).where("id", "=", id).executeTakeFirst();
+  return db.selectFrom("wc_folder").select(["id", "name", "position"]).where("owner_id", "=", ownerId).where("id", "=", id).executeTakeFirst();
 }
 
-export async function insertFolder(db: Db, ownerId: string, id: string, name: string): Promise<void> {
-  await db.insertInto("wc_folder").values({ id, owner_id: ownerId, name }).execute();
+/** 맨 끝 다음 번호(폴더가 없으면 0) */
+export async function nextPosition(db: Db, ownerId: string): Promise<number> {
+  const r = await db.selectFrom("wc_folder").select((eb) => eb.fn.max("position").as("p")).where("owner_id", "=", ownerId).executeTakeFirst();
+  return r?.p === null || r?.p === undefined ? 0 : Number(r.p) + 1;
+}
+
+/** position 이상인 ownerId의 폴더를 한 칸씩 뒤로. 유일 제약은 커밋 때 검사한다(0008 DEFERRABLE) */
+export async function shiftFrom(db: Db, ownerId: string, position: number): Promise<void> {
+  await db
+    .updateTable("wc_folder")
+    .set((eb) => ({ position: eb("position", "+", 1) }))
+    .where("owner_id", "=", ownerId)
+    .where("position", ">=", position)
+    .execute();
+}
+
+export async function insertFolder(db: Db, ownerId: string, id: string, name: string, position: number): Promise<void> {
+  await db.insertInto("wc_folder").values({ id, owner_id: ownerId, name, position }).execute();
 }
 
 export async function renameFolder(db: Db, ownerId: string, id: string, name: string): Promise<void> {

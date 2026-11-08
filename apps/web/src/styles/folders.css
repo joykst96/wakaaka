@@ -118,3 +118,102 @@
   font: var(--font-body-sm);
 }
 
+
+/* ---------------- 우클릭 메뉴, 새 폴더 칸, 끌어 놓기 (DESIGN 11절 "우클릭 메뉴", "끌어 놓기") ---------------- */
+.folder-tree {
+  display: contents;
+}
+.folder-menu {
+  position: fixed;
+  z-index: var(--wk-z-menu);
+  display: flex;
+  flex-direction: column;
+  min-width: max-content;
+  margin: 0;
+}
+.folder-menu-item {
+  border-inline: none;
+  border-block-start: none;
+  background: none;
+  color: var(--color-fg);
+  font: var(--font-body);
+  text-align: start;
+}
+.folder-menu-item:focus-visible,
+.folder-menu-item:focus {
+  outline: none;
+  background: var(--color-bg-selected);
+}
+.folder-menu-item.is-danger {
+  color: var(--color-danger);
+}
+.folder-new {
+  padding: var(--wk-sidebar-item-padding);
+}
+.folder-new-input {
+  width: 100%;
+}
+.folder-new-chip {
+  display: inline-flex;
+}
+.sidebar-error {
+  margin: 0;
+  font: var(--font-body-sm);
+}
+.folders-hint {
+  margin: 0;
+  font: var(--font-body-sm);
+}
+
+/* 끌 수 있는 행: 길게 누를 때 글자 고르기·링크 미리보기가 뜨지 않게 */
+[data-drag] {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+[data-drag].is-pressed,
+[data-folder-menu].is-pressed {
+  border-radius: var(--wk-radius);
+  background: var(--color-bg-selected);
+}
+.is-dragged {
+  opacity: 0.5;
+}
+.is-folder-dragging,
+.is-folder-dragging * {
+  cursor: grabbing;
+  user-select: none;
+}
+/* 끄는 동안 놓을 수 있는 곳 */
+.is-folder-dragging [data-drop-hint] {
+  outline: var(--wk-border-width) dashed var(--color-accent-border);
+  outline-offset: calc(-1 * var(--wk-border-width));
+}
+.is-folder-dragging [data-drop-hint].is-drop-over {
+  outline: var(--focus-ring-width) solid var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+.folder-dropzone {
+  padding: var(--wk-sidebar-item-padding);
+  border-radius: var(--wk-radius);
+  color: var(--color-fg-muted);
+  font: var(--font-body-sm);
+  text-align: center;
+}
+.folder-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--wk-z-menu);
+  max-width: var(--wk-sidebar-width);
+  overflow: hidden;
+  padding: var(--wk-sidebar-item-padding);
+  border: var(--wk-border-width) solid var(--color-border);
+  border-radius: var(--wk-radius);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-md);
+  color: var(--color-fg);
+  font: var(--font-body-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}

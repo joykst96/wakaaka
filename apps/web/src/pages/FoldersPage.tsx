@@ -1,31 +1,15 @@
 // 폴더 정리 (DESIGN 11절 "폴더", 사용자 결정 2026-11-08). 나만 보는 정리용이라 로그인한 본인만 쓴다.
-// 위: 전체 · 폴더 없음 · 폴더들(이름순) 칩과 새 폴더. 아래: 고른 보기의 와일드카드, 골라서 옮기기, 폴더 이름 바꾸기·지우기.
+// 위: 전체 · 폴더 없음 · 폴더들(사용자가 정한 순서, 0008) 칩과 새 폴더. 아래: 고른 보기의 와일드카드, 골라서 옮기기, 폴더 이름 바꾸기·지우기.
 // 보기는 주소에 둔다(/folders, /folders/none, /folders/{폴더 ID}). 링크는 routes.ts hrefOf로만 만든다.
+// 칩 줄의 우클릭 메뉴(새 폴더·폴더 지우기)와 와일드카드를 칩으로 끌어 놓기는 사이드바와 같은 FolderTools.tsx다(사용자 결정 2026-11-09).
+// 키보드만으로 옮기는 길은 "골라서 옮기기"다.
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, navigate } from "../app/router.tsx";
 import { useSession } from "../app/session.tsx";
-import { Dialog } from "../components/Dialogs.tsx";
+import { useFolderTools } from "../components/FolderTools.tsx";
 import { api, ApiError, type Folder } from "../lib/api.ts";
-import { checkFolderName, folderIndex, groupByFolder } from "../lib/folders.ts";
-
-function messageOf(e: unknown): string {
-  if (!(e instanceof ApiError)) return String(e);
-  switch (e.code) {
-    case "E_FOLDER_NAME_TAKEN":
-      return "같은 이름의 폴더가 있습니다.";
-    case "E_FOLDER_LIMIT":
-      return "폴더는 100개까지 만들 수 있습니다.";
-    case "E_FOLDER_NAME":
-      return "폴더 이름은 앞뒤 공백 없이 1~64자이고 줄바꿈 같은 제어문자는 쓸 수 없습니다.";
-    case "E_FOLDER_NOT_FOUND":
-      return "폴더가 없습니다. 다른 곳에서 지웠을 수 있습니다.";
-    case "E_NOT_FOUND":
-      return "지운 와일드카드가 섞여 있습니다. 목록을 새로 받았으니 다시 골라 주세요.";
-    default:
-      return e.message;
-  }
-}
+import { checkFolderName, folderErrorMessage as messageOf, folderIndex, groupByFolder } from "../lib/folders.ts";
 
 export function FoldersPage({ view }: { view?: string }) {
   const { user, mine, folders, refreshFolders, refreshMine } = useSession();
@@ -35,12 +19,18 @@ export function FoldersPage({ view }: { view?: string }) {
   const [busy, setBusy] = useState(false);
   const [newName, setNewName] = useState("");
   const [renaming, setRenaming] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState<Folder | null>(null);
 
   const grouped = useMemo(() => groupByFolder(mine, folders), [mine, folders]);
   const index = useMemo(() => folderIndex(folders), [folders]);
   const folder = view !== undefined && view !== "none" ? folders.find((f) => f.id === view) : undefined;
   const shown = view === undefined ? mine : view === "none" ? grouped.loose : (grouped.folders.find((g) => g.folder.id === view)?.items ?? []);
+  const shownIds = useMemo(() => shown.map((w) => w.id), [shown]);
+  const tools = useFolderTools({
+    selection: { selected, shown: shownIds },
+    onMoved: (ids) => setSelected((s) => new Set([...s].filter((id) => !ids.includes(id)))),
+    onDeleted: (id) => view === id && navigate({ name: "folders", folder: "none" }, { replace: true }),
+    onError: setError,
+  });
 
   // 보기가 바뀌면 고른 것을 비운다. 목록이 바뀌면 사라진 것만 뺀다
   useEffect(() => setSelected(new Set()), [view]);
@@ -113,11 +103,26 @@ export function FoldersPage({ view }: { view?: string }) {
 
   const allChecked = shown.length > 0 && shown.every((w) => selected.has(w.id));
   const count = shown.filter((w) => selected.has(w.id)).length;
-  const viewChip = (to: string | undefined, label: string, n: number) => (
-    <button key={to ?? "all"} type="button" className="chip" aria-pressed={view === to} onClick={() => navigate({ name: "folders", folder: to })}>
-      {label} <span className="text-muted">{n}</span>
-    </button>
-  );
+  // 칩: 폴더 칩은 메뉴(그 다음에 새 폴더, 지우기)와 놓는 곳, "폴더 없음"은 놓는 곳, "전체"·"폴더 없음"의 메뉴는 맨 끝에 새 폴더
+  const viewChip = (to: string | undefined, label: string, n: number) => {
+    return (
+      <button
+        key={to ?? "all"}
+        type="button"
+        className="chip"
+        aria-pressed={view === to}
+        onClick={() => navigate({ name: "folders", folder: to })}
+        data-folder-menu={to === undefined || to === "none" ? "end" : "folder:" + to}
+        data-drop={to}
+        data-drop-hint={to}
+      >
+        {label} <span className="text-muted">{n}</span>
+      </button>
+    );
+  };
+  const folderIds = new Set(folders.map((f) => f.id));
+  const draftAt = tools.draft ? (tools.draft.after !== undefined && folderIds.has(tools.draft.after) ? tools.draft.after : "end") : null;
+  const draftChip = <span key="new-folder" className="folder-new-chip">{tools.draftInput()}</span>;
 
   return (
     <div className="page folders-page">
@@ -128,13 +133,15 @@ export function FoldersPage({ view }: { view?: string }) {
           {error}
         </p>
       )}
-      <div className="folders-layout">
+      <div className="folders-layout" {...tools.containerProps}>
         <section className="panel folders-nav" aria-label="폴더 목록">
-          <div className="chip-group" role="group" aria-label="보기">
+          <div className="chip-group folders-chips" role="group" aria-label="보기" data-folder-menu="end">
             {viewChip(undefined, "전체", mine.length)}
             {viewChip("none", "폴더 없음", grouped.loose.length)}
-            {grouped.folders.map((g) => viewChip(g.folder.id, g.folder.name, g.items.length))}
+            {grouped.folders.map((g) => [viewChip(g.folder.id, g.folder.name, g.items.length), draftAt === g.folder.id && draftChip])}
+            {draftAt === "end" && draftChip}
           </div>
+          <p className="text-muted folders-hint">폴더를 우클릭(터치는 길게 누르기, 키보드는 Shift+F10)하면 그 다음에 새 폴더를 만들거나 지울 수 있습니다. 와일드카드를 폴더 칩으로 끌어 옮길 수 있습니다.</p>
           <form className="folders-new" onSubmit={create}>
             <input className="input input-sm" placeholder="새 폴더 이름" aria-label="새 폴더 이름" value={newName} maxLength={200} onChange={(e) => setNewName(e.target.value)} />
             <button className="btn btn-sm" disabled={busy}>
@@ -155,7 +162,7 @@ export function FoldersPage({ view }: { view?: string }) {
                     <button type="button" className="btn btn-ghost btn-sm" onClick={() => setRenaming(folder.id)} disabled={busy}>
                       이름 바꾸기
                     </button>
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => setDeleting(folder)} disabled={busy}>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => tools.askDelete(folder)} disabled={busy}>
                       지우기
                     </button>
                   </span>
@@ -190,7 +197,7 @@ export function FoldersPage({ view }: { view?: string }) {
               </div>
               <ul className="folders-items">
                 {shown.map((w) => (
-                  <li key={w.id} className="folders-item">
+                  <li key={w.id} className={"folders-item" + (tools.dragging?.includes(w.id) ? " is-dragged" : "")} data-drag={w.id}>
                     <label className="label folders-check">
                       <input
                         type="checkbox"
@@ -217,33 +224,7 @@ export function FoldersPage({ view }: { view?: string }) {
         </section>
       </div>
 
-      {deleting && (
-        <Dialog title="폴더 지우기" onClose={() => setDeleting(null)}>
-          <p>
-            폴더 <strong>{deleting.name}</strong>을(를) 지웁니다. 안의 와일드카드 {grouped.folders.find((g) => g.folder.id === deleting.id)?.items.length ?? 0}개는 지우지 않고 "폴더 없음"으로 옮깁니다.
-          </p>
-          <div className="dialog-actions">
-            <button type="button" className="btn btn-secondary" onClick={() => setDeleting(null)} disabled={busy}>
-              취소
-            </button>
-            <button
-              type="button"
-              className="btn btn-danger"
-              disabled={busy}
-              onClick={() =>
-                run(async () => {
-                  await api.deleteFolder(deleting.id);
-                  setDeleting(null);
-                  await refreshFolders();
-                  navigate({ name: "folders", folder: "none" }, { replace: true });
-                })
-              }
-            >
-              지우기
-            </button>
-          </div>
-        </Dialog>
-      )}
+      {tools.overlay}
     </div>
   );
 }

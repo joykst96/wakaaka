@@ -12,6 +12,8 @@
   --wk-radius-lg: var(--radius-xl);
   --wk-z-drawer: var(--z-overlay);
   --wk-z-popover: var(--z-dropdown);
+  /* 우클릭 메뉴와 끄는 표시(DESIGN 11절 "우클릭 메뉴"). 모바일 서랍(--wk-z-drawer) 위에 뜬다 */
+  --wk-z-menu: var(--z-modal);
   --wk-z-sticky: var(--z-sticky);
 
   /* ---------------- 편집 화면 탭 ---------------- */

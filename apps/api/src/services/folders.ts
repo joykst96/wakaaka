@@ -19,6 +19,8 @@ export const FOLDER_MAX = 100;
 export const MOVE_MAX = 500;
 
 export const folderBodySchema = z.strictObject({ name: z.string() });
+/** 만들기: after가 있으면 그 폴더 바로 다음에, 없으면 맨 끝에(사용자 결정 2026-11-09, DESIGN 11절 "우클릭 메뉴") */
+export const createFolderBodySchema = z.strictObject({ name: z.string(), after: z.string().optional() });
 export const moveBodySchema = z.strictObject({
   folder: z.string().regex(BASE62_12).nullable(),
   wildcards: z.array(z.string().regex(BASE62_12)).min(1).max(MOVE_MAX),
@@ -64,7 +66,7 @@ async function ownedFolder(db: Db, owner: Owner, id: string): Promise<repo.Folde
 export interface FolderView {
   id: string;
   name: string;
-  /** 든 와일드카드 ID. 지운 것은 빠진다. 순서는 내 목록과 같은 이름순 */
+  /** 든 와일드카드 ID. 지운 것은 빠진다. 순서는 내 목록과 같은 이름순. 폴더 자체의 순서는 목록 배열 순서(position)로만 알린다 */
   wildcards: string[];
 }
 
@@ -75,12 +77,19 @@ export async function listFolders(db: Db, owner: Owner): Promise<{ folders: Fold
   return { folders: folders.map((f) => ({ id: f.id, name: f.name, wildcards: members.get(f.id) ?? [] })) };
 }
 
-export async function createFolder(db: Db, owner: Owner, rawName: string): Promise<FolderView> {
+/** 폴더를 만든다. after(내 폴더 ID)가 있으면 그 바로 다음 자리, 없으면 맨 끝. 남의·없는 after는 404 */
+export async function createFolder(db: Db, owner: Owner, rawName: string, after?: string): Promise<FolderView> {
   const name = checkFolderName(rawName);
   return withOwnerLock(db, owner, async (tx) => {
     if ((await repo.countFolders(tx, owner.id)) >= FOLDER_MAX) throw new ApiError(409, "E_FOLDER_LIMIT", `you can have at most ${FOLDER_MAX} folders`);
+    let position: number;
+    if (after === undefined) position = await repo.nextPosition(tx, owner.id);
+    else {
+      position = (await ownedFolder(tx, owner, after)).position + 1;
+      await repo.shiftFrom(tx, owner.id, position);
+    }
     const id = newWildcardId();
-    await repo.insertFolder(tx, owner.id, id, name);
+    await repo.insertFolder(tx, owner.id, id, name, position);
     return { id, name, wildcards: [] };
   });
 }

@@ -177,8 +177,8 @@ export function createApp({ db, webDir, rateLimit: limits }: AppDeps) {
   app.get("/api/folders", async (c) => json(c, await folders.listFolders(db, requireOwner(c))));
   app.post("/api/folders", async (c) => {
     const owner = requireOwner(c);
-    const b = parseBody(folders.folderBodySchema, await readJson(c));
-    return json(c, await folders.createFolder(db, owner, b.name), 201);
+    const b = parseBody(folders.createFolderBodySchema, await readJson(c));
+    return json(c, await folders.createFolder(db, owner, b.name, b.after), 201);
   });
   // /api/folders/{id}보다 먼저 둔다(폴더 ID는 12자라 겹치지 않지만 읽는 사람을 위해)
   app.post("/api/folders/move", async (c) => {

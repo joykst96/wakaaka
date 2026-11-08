@@ -15,6 +15,8 @@ export interface Session {
   refreshMine(): Promise<void>;
   refreshFavorites(): Promise<void>;
   refreshFolders(): Promise<void>;
+  /** 옮기기를 화면에 먼저 반영하고, 실패하면 되돌릴 때 쓴다(서버 값은 refreshFolders로 다시 받는다) */
+  setFolders(f: Folder[]): void;
 }
 
 const Ctx = createContext<Session | null>(null);
@@ -57,7 +59,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [refreshMine, refreshFavorites, refreshFolders]);
 
   const value = useMemo(
-    () => ({ user, mine, favorites, folders, setUser, refreshMine, refreshFavorites, refreshFolders }),
+    () => ({ user, mine, favorites, folders, setUser, refreshMine, refreshFavorites, refreshFolders, setFolders }),
     [user, mine, favorites, folders, refreshMine, refreshFavorites, refreshFolders],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

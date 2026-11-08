@@ -231,6 +231,23 @@ const m0007: Migration = {
   },
 };
 
+// 폴더 순서를 사용자가 정한다(DESIGN 11절 "폴더", 사용자 결정 2026-11-09: 새 폴더는 우클릭한 곳 바로 아래).
+// 기존 폴더는 그때 보이던 순서(listFolders의 ORDER BY name, id, 같은 DB 콜레이션) 그대로 0부터 번호를 매긴다.
+// 유일 제약은 DEFERRABLE INITIALLY DEFERRED: 끼워 넣을 때 뒤 폴더들을 한 번에 +1 하는 UPDATE가 행마다 검사에 걸리지 않게.
+// 지울 때 빈 번호는 메우지 않는다(순서만 쓰므로 상관없다).
+const m0008: Migration = {
+  async up(db: Kysely<any>) {
+    await db.schema.alterTable("wc_folder").addColumn("position", "integer").execute();
+    await sql`
+      update wc_folder f set position = r.n
+      from (select id, (row_number() over (partition by owner_id order by name, id) - 1)::int as n from wc_folder) r
+      where r.id = f.id
+    `.execute(db);
+    await db.schema.alterTable("wc_folder").alterColumn("position", (c) => c.setNotNull()).execute();
+    await sql`alter table wc_folder add constraint wc_folder_owner_position unique (owner_id, position) deferrable initially deferred`.execute(db);
+  },
+};
+
 export const migrations: Record<string, Migration> = {
   "0001_init": m0001,
   "0002_social": m0002,
@@ -239,6 +256,7 @@ export const migrations: Record<string, Migration> = {
   "0005_explore_edited_copies": m0005,
   "0006_tag_keyword_post_count": m0006,
   "0007_folders": m0007,
+  "0008_folder_position": m0008,
 };
 
 /**
