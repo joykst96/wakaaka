@@ -11,6 +11,7 @@ import type { Db } from "./db/connect.ts";
 import { ApiError, errorBody, json, readJson } from "./http.ts";
 import * as auth from "./services/auth.ts";
 import * as bundles from "./services/bundle.ts";
+import * as folders from "./services/folders.ts";
 import * as social from "./services/social.ts";
 import { MAX_DOC_BYTES } from "./services/validate.ts";
 import { rateLimit, type RateLimitConfig } from "./ratelimit.ts";
@@ -93,6 +94,9 @@ export function createApp({ db, webDir, rateLimit: limits }: AppDeps) {
   app.use("/api/wildcards", limit(MAX_DOC_BYTES + 4 * 1024));
   app.use("/api/favorites", limit(4 * 1024));
   app.use("/api/favorites/*", limit(4 * 1024));
+  app.use("/api/folders", limit(4 * 1024));
+  // 옮기기: ID 500개(약 8KB)
+  app.use("/api/folders/*", limit(16 * 1024));
   app.use("/api/lookup", limit(16 * 1024));
   app.use("/api/tags/lookup", limit(64 * 1024));
 
@@ -167,6 +171,27 @@ export function createApp({ db, webDir, rateLimit: limits }: AppDeps) {
 
   app.put("/api/wildcards/:id/like", async (c) => json(c, await social.setLike(db, requireOwner(c), idParam(c), true)));
   app.delete("/api/wildcards/:id/like", async (c) => json(c, await social.setLike(db, requireOwner(c), idParam(c), false)));
+
+  // ------------------------------------------------------------ 폴더 (나만 보는 정리용, DESIGN 11절 "폴더")
+
+  app.get("/api/folders", async (c) => json(c, await folders.listFolders(db, requireOwner(c))));
+  app.post("/api/folders", async (c) => {
+    const owner = requireOwner(c);
+    const b = parseBody(folders.folderBodySchema, await readJson(c));
+    return json(c, await folders.createFolder(db, owner, b.name), 201);
+  });
+  // /api/folders/{id}보다 먼저 둔다(폴더 ID는 12자라 겹치지 않지만 읽는 사람을 위해)
+  app.post("/api/folders/move", async (c) => {
+    const owner = requireOwner(c);
+    const b = parseBody(folders.moveBodySchema, await readJson(c));
+    return json(c, await folders.moveWildcards(db, owner, b.folder, b.wildcards));
+  });
+  app.put("/api/folders/:id", async (c) => {
+    const owner = requireOwner(c);
+    const b = parseBody(folders.folderBodySchema, await readJson(c));
+    return json(c, await folders.renameFolder(db, owner, c.req.param("id"), b.name));
+  });
+  app.delete("/api/folders/:id", async (c) => json(c, await folders.deleteFolder(db, requireOwner(c), c.req.param("id"))));
 
   // ------------------------------------------------------------ 즐겨찾기, 둘러보기, 조회
 

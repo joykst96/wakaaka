@@ -81,7 +81,7 @@ export async function runAdmin(db: Db, argv: string[], out: (line: string) => vo
     }
     case "delete-account": {
       const r = await admin.deleteAccount(db, p.args[0]!, p.yes);
-      out(`${dry ? "would delete" : "deleted"} account ${r.username}: wildcards ${r.wildcards}, sessions ${r.sessions}, favorites ${r.favorites}, likes given ${r.likes}`);
+      out(`${dry ? "would delete" : "deleted"} account ${r.username}: wildcards ${r.wildcards}, sessions ${r.sessions}, favorites ${r.favorites}, likes given ${r.likes}, folders ${r.folders}`);
       tail();
       return;
     }

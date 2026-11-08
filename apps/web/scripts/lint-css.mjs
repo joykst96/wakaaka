@@ -1,6 +1,6 @@
 // 앱 스타일 검사 (DESIGN 10절 "디자인 토큰"). npm run lint:css, npm test가 부른다.
 //  1) design-tokens/scripts/check.mjs: 날 값(색·시간), 미정의 토큰, 토큰 층 방향. 앱 파일의 길이 리터럴("고유 치수")도 실패로 본다
-//  2) 층 규칙: app.css와 CodeMirror 테마(.ts)는 2층과 앱 3층(styles/components.css에서 정의한 것)만,
+//  2) 층 규칙: app.css·folders.css와 CodeMirror 테마(.ts)는 2층과 앱 3층(styles/components.css에서 정의한 것)만,
 //     components.css는 2층과 1층 "스케일"(간격·라운드·테두리·크기·z, 팔레트 색 제외)만 참조한다
 //  3) TS/TSX: var(--x)는 정의된 토큰이어야 하고, 테마 문자열에 색·길이 리터럴이 없어야 한다
 import { spawnSync } from "node:child_process";
@@ -10,7 +10,8 @@ import { fileURLToPath } from "node:url";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const tokensDir = join(web, "src/design-tokens");
-const appCss = [join(web, "src/styles/components.css"), join(web, "src/styles/app.css")];
+// 0번은 앱 3층(components.css), 나머지는 앱 CSS(2층과 앱 3층만). folders.css는 폴더 화면(DESIGN 11절 "폴더")
+const appCss = [join(web, "src/styles/components.css"), join(web, "src/styles/app.css"), join(web, "src/styles/folders.css")];
 const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "");
 const defs = (file) => new Set([...strip(readFileSync(file, "utf8")).matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
 const refs = (text) => [...text.matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => [m[1], m.index]);
@@ -37,7 +38,7 @@ const check = (file, allowed, what) => {
   for (const [name, i] of refs(text)) if (!allowed(name)) errors.push(`${relative(web, file)}:${lineOf(text, i)} ${what}: ${name}`);
 };
 check(appCss[0], (n) => L2.has(n) || (L1.has(n) && scale.test(n) && !palette.test(n)) || appL3.has(n), "앱 3층은 2층과 1층 스케일만");
-check(appCss[1], (n) => L2.has(n) || appL3.has(n), "앱 CSS는 2층과 앱 3층만");
+for (const f of appCss.slice(1)) check(f, (n) => L2.has(n) || appL3.has(n), "앱 CSS는 2층과 앱 3층만");
 
 // 3) TS/TSX
 const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (e.name === "design-tokens" ? [] : walk(join(dir, e.name))) : [join(dir, e.name)]));

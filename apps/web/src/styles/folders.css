@@ -1,0 +1,120 @@
+/* 폴더 (DESIGN 11절 "폴더"): 사이드바의 폴더 머리와 폴더 정리 화면.
+   app.css와 같은 규칙(2층 역할 토큰과 앱 3층 토큰만)으로 lint-css.mjs가 검사한다.
+   app.css와 따로 둔 이유: 다른 브랜치가 app.css를 고치고 있어 합칠 때 겹치지 않게(NOTES 2026-11-08). */
+
+/* ---------------- 사이드바 ---------------- */
+.folder-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-xs);
+}
+.folder-head a {
+  text-decoration: none;
+}
+.folder-toggle {
+  width: 100%;
+  border: none;
+  background: none;
+  font: var(--font-body);
+  text-align: start;
+  cursor: pointer;
+}
+.folder-caret {
+  flex: none;
+  color: var(--color-fg-muted);
+}
+.folder-items {
+  padding-inline-start: var(--inset-md);
+}
+
+/* ---------------- 폴더 정리 화면 ---------------- */
+.folders-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-lg);
+}
+.folders-nav,
+.folders-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+}
+.folders-new,
+.folders-rename {
+  display: flex;
+  gap: var(--gap-xs);
+}
+.folders-new .input,
+.folders-rename .input {
+  flex: 1;
+  min-width: 0;
+}
+.folders-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-sm);
+}
+.folders-title .panel-title {
+  margin: 0;
+}
+.folders-title-actions {
+  display: flex;
+  gap: var(--gap-xs);
+}
+.folders-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-sm);
+  padding-block-end: var(--inset-sm);
+  border-block-end: var(--wk-border-width) solid var(--color-border);
+}
+.folders-bar .label,
+.folders-check {
+  gap: var(--gap-xs);
+}
+.folders-bar-move {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap-xs);
+  white-space: nowrap;
+}
+.folders-bar .label {
+  white-space: nowrap;
+}
+.folders-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.folders-item {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: var(--wk-sidebar-item-padding);
+  border-radius: var(--wk-radius);
+}
+.folders-item:hover {
+  background: var(--wk-sidebar-item-bg-hover);
+}
+.folders-name:hover {
+  text-decoration: underline;
+}
+.folders-name {
+  overflow: hidden;
+  color: var(--color-fg);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.folders-where {
+  margin-inline-start: auto;
+  flex: none;
+  font: var(--font-body-sm);
+}
+

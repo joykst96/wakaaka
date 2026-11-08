@@ -8,6 +8,7 @@ import "./design-tokens/base.css";
 import "./design-tokens/ui.css";
 import "./styles/components.css";
 import "./styles/app.css";
+import "./styles/folders.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

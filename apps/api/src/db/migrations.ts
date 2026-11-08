@@ -206,6 +206,31 @@ const m0006: Migration = {
   },
 };
 
+// 사용자 폴더(DESIGN 11절 "폴더", 사용자 결정 2026-11-08). 나만 보는 정리용, 한 단계, 와일드카드마다 폴더 하나.
+// 소속은 wildcard.folder_id. FK를 (owner_id, folder_id) 쌍으로 걸어 남의 폴더에 넣는 것을 DB가 막는다.
+// 폴더를 지우면 folder_id만 NULL(열 목록 SET NULL, Postgres 15+). owner_id는 NOT NULL이라 열 목록 없이는 지울 수 없다.
+const m0007: Migration = {
+  async up(db: Kysely<any>) {
+    await db.schema
+      .createTable("wc_folder")
+      .addColumn("id", "char(12)", (c) => c.primaryKey())
+      .addColumn("owner_id", "bigint", (c) => c.notNull().references("owner.id"))
+      .addColumn("name", "text", (c) => c.notNull())
+      .addColumn("created_at", "timestamptz", (c) => c.notNull().defaultTo(sql`now()`))
+      .addUniqueConstraint("wc_folder_owner_id", ["owner_id", "id"])
+      .execute();
+    await db.schema.createIndex("wc_folder_owner_name_lower").on("wc_folder").unique().columns(["owner_id", sql`lower(name)`]).execute();
+
+    await db.schema.alterTable("wildcard").addColumn("folder_id", "char(12)").execute();
+    await sql`
+      alter table wildcard add constraint wildcard_folder_fk
+      foreign key (owner_id, folder_id) references wc_folder (owner_id, id) on delete set null (folder_id)
+    `.execute(db);
+    // 폴더를 지울 때 FK가 찾는 색인이자 폴더별 목록 색인
+    await db.schema.createIndex("wildcard_folder").on("wildcard").columns(["owner_id", "folder_id"]).where(sql<boolean>`folder_id is not null`).execute();
+  },
+};
+
 export const migrations: Record<string, Migration> = {
   "0001_init": m0001,
   "0002_social": m0002,
@@ -213,6 +238,7 @@ export const migrations: Record<string, Migration> = {
   "0004_admin": m0004,
   "0005_explore_edited_copies": m0005,
   "0006_tag_keyword_post_count": m0006,
+  "0007_folders": m0007,
 };
 
 /**

@@ -14,6 +14,8 @@ export type Route =
   | { name: "login" }
   | { name: "signup" }
   | { name: "settings" }
+  /** 폴더 정리 (DESIGN 11절 "폴더"). folder: 없으면 전체, "none"이면 폴더 없음, 아니면 폴더 ID */
+  | { name: "folders"; folder?: string }
   | { name: "notFound" };
 
 /** 바깥 링크. 주소는 아래 고정 목록에서만 고른다(사용자 문자열 없음). 화면이 아니라서 Route에 넣지 않는다(navigate로 못 간다) */
@@ -35,7 +37,10 @@ export function parseRoute(pathname: string): Route {
   if (pathname === "/login") return { name: "login" };
   if (pathname === "/signup") return { name: "signup" };
   if (pathname === "/settings") return { name: "settings" };
-  let m = /^\/w\/([^/]+)$/.exec(pathname);
+  if (pathname === "/folders") return { name: "folders" };
+  let m = /^\/folders\/([^/]+)$/.exec(pathname);
+  if (m) return m[1] === "none" || isWildcardId(m[1]!) ? { name: "folders", folder: m[1]! } : { name: "notFound" };
+  m = /^\/w\/([^/]+)$/.exec(pathname);
   if (m) return isWildcardId(m[1]!) ? { name: "wildcard", id: m[1]! } : { name: "notFound" };
   m = /^\/u\/([^/]+)$/.exec(pathname);
   if (m) return isUsername(m[1]!) ? { name: "user", username: m[1]! } : { name: "notFound" };
@@ -60,6 +65,10 @@ export function hrefOf(r: Route | External): string {
       return "/signup";
     case "settings":
       return "/settings";
+    case "folders":
+      // 폴더 ID도 와일드카드와 같은 base62 12자
+      if (r.folder === undefined) return "/folders";
+      return r.folder === "none" || isWildcardId(r.folder) ? `/folders/${r.folder}` : "/folders";
     case "external":
       return Object.hasOwn(EXTERNAL, r.to) ? EXTERNAL[r.to] : "/";
   }

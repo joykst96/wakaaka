@@ -150,9 +150,11 @@ export interface DeleteAccountResult {
   favorites: number;
   /** 이 계정이 남에게 준 좋아요(받은 쪽 like_count를 내린다) */
   likes: number;
+  /** 나만 보는 폴더(DESIGN 11절 "폴더"). 행을 지운다 */
+  folders: number;
 }
 
-/** 와일드카드를 모두 지우고 세션·즐겨찾기·좋아요를 지운다. 아이디는 다시 가입할 수 없게 남긴다. 되살리기는 없다 */
+/** 와일드카드를 모두 지우고 세션·즐겨찾기·좋아요·폴더를 지운다. 아이디는 다시 가입할 수 없게 남긴다. 되살리기는 없다 */
 export async function deleteAccount(db: Db, username: string, apply: boolean): Promise<DeleteAccountResult> {
   return inTx(db, apply, async (tx) => {
     const o = await ownerOf(tx, username);
@@ -162,6 +164,8 @@ export async function deleteAccount(db: Db, username: string, apply: boolean): P
     const sessions = await tx.deleteFrom("session").where("owner_id", "=", o.id).returning("token_hash").execute();
     const favorites = await tx.deleteFrom("favorite").where("owner_id", "=", o.id).returning("wildcard_id").execute();
     const likes = await tx.deleteFrom("wc_like").where("owner_id", "=", o.id).returning("wildcard_id").execute();
+    // 든 와일드카드의 folder_id는 FK가 NULL로 바꾼다
+    const folders = await tx.deleteFrom("wc_folder").where("owner_id", "=", o.id).returning("id").execute();
     // 좋아요는 계정당 한 번(PK)이라 와일드카드마다 1씩 내린다
     if (likes.length > 0) {
       await tx
@@ -171,7 +175,7 @@ export async function deleteAccount(db: Db, username: string, apply: boolean): P
         .execute();
     }
     await tx.updateTable("owner").set({ deleted_at: sql<Date>`now()` }).where("id", "=", o.id).execute();
-    return { username: o.username, wildcards: wcs.length, sessions: sessions.length, favorites: favorites.length, likes: likes.length };
+    return { username: o.username, wildcards: wcs.length, sessions: sessions.length, favorites: favorites.length, likes: likes.length, folders: folders.length };
   });
 }
 
