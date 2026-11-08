@@ -2,7 +2,7 @@
 // 가운데: 이름·분류·설명·상태, 개수·구분자·보기 전환, 목록 보기/텍스트 보기. 오른쪽: 미리보기, 사용하는 것, 사용되는 곳, 버전 이력.
 
 import type { SourceRange } from "@wakaaka/core";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { getBundle, getMeta, invalidate, primeMeta, requestMeta, useMetaVersion } from "../app/cache.ts";
 import { Link, navigate, navigateBack } from "../app/router.tsx";
 import { useTabs } from "../app/tabs.tsx";
@@ -10,6 +10,7 @@ import { keyOf, type TabKey } from "../lib/tabs.ts";
 import { useSession } from "../app/session.tsx";
 import { ImportDialog, PickRefDialog } from "../components/Dialogs.tsx";
 import { GuideButton } from "../components/Guide.tsx";
+import { useToast } from "../components/Toast.tsx";
 import type { RefOption } from "../editor/cm.ts";
 import { CmEditor } from "../editor/CmEditor.tsx";
 import { ItemList } from "../editor/ItemList.tsx";
@@ -25,6 +26,7 @@ import { DEFAULT_COUNT, DEFAULT_SEP, fromDoc, sameDoc, toDoc, type EditDoc, type
 import { mineByName, nameKey, nameRefs, rewriteItems } from "../lib/names.ts";
 import { buildPreviewBundle, dependencyTree, directRefs, type BundleLike } from "../lib/preview.ts";
 import { canUseTextView, itemsToText, textToItems } from "../lib/textview.ts";
+import type { ToastInput } from "../lib/toasts.ts";
 
 /** tabKey: 이 화면이 든 탭, active: 지금 보이는 탭인지(Ctrl+S 등은 보이는 탭만) */
 export function WildcardPage({ id, tabKey, active }: { id: string | null; tabKey: TabKey; active: boolean }) {
@@ -128,12 +130,15 @@ function Editor({ detail, tabKey, active, onPickVersion }: { detail: WildcardDet
   const [mode, setMode] = useState<"list" | "text">("list");
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ kind: "error" | "warning" | "info"; text: string } | null>(null);
+  // 제자리 오류 띠: 고칠 때까지 보여야 하는 것(저장 오류, 텍스트 보기 가중치 범위). 나머지 알림은 토스트(사용자 결정 2026-11-09)
+  const [message, setMessage] = useState<string | null>(null);
+  const toast = useToast();
   const [errorItem, setErrorItem] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [offer, setOffer] = useState<Draft | null>(null);
   const [savedTick, setSavedTick] = useState(0);
+  const descId = useId();
 
   const textItems = useCallback((t: string, random?: (n: number) => Uint8Array) => textToItems(doc.items, t, random), [doc.items]);
   /** 텍스트 보기면 그 내용을 항목으로 바꾼 문서 */
@@ -187,11 +192,11 @@ function Editor({ detail, tabKey, active, onPickVersion }: { detail: WildcardDet
   const switchMode = (next: "list" | "text") => {
     if (next === mode) return;
     if (next === "text") {
-      if (!canUseTextView(doc.items)) return setMessage({ kind: "warning", text: "줄바꿈이 든 항목이 있어 텍스트 보기를 쓸 수 없습니다." });
+      if (!canUseTextView(doc.items)) return toast({ kind: "warning", text: "줄바꿈이 든 항목이 있어 텍스트 보기를 쓸 수 없습니다." });
       setText(itemsToText(doc.items));
     } else {
       const r = textItems(text);
-      if (r.badWeights.length > 0) return setMessage({ kind: "error", text: `가중치는 0~1,000,000입니다 (${r.badWeights.map((i) => i + 1).join(", ")}번째 줄)` });
+      if (r.badWeights.length > 0) return setMessage(`가중치는 0~1,000,000입니다 (${r.badWeights.map((i) => i + 1).join(", ")}번째 줄)`);
       setDoc({ ...doc, items: r.items });
     }
     setMessage(null);
@@ -215,9 +220,9 @@ function Editor({ detail, tabKey, active, onPickVersion }: { detail: WildcardDet
       for (const [key, name] of nameRefs(items)) {
         if (map.has(key)) continue;
         const card = await askPick(name);
-        if (!card) return setMessage({ kind: "info", text: "저장을 취소했습니다." });
+        if (!card) return toast({ text: "저장을 취소했습니다." });
         const root = await askImport(card);
-        if (!root) return setMessage({ kind: "info", text: "저장을 취소했습니다." });
+        if (!root) return toast({ text: "저장을 취소했습니다." });
         map.set(key, root);
       }
       items = rewriteItems(items, (n) => map.get(nameKey(n)));
@@ -232,7 +237,7 @@ function Editor({ detail, tabKey, active, onPickVersion }: { detail: WildcardDet
       setDoc(saved);
       if (mode === "text") setText(itemsToText(saved.items));
       setSavedTick((x) => x + 1);
-      setMessage(warningText(res.warnings, res.unchanged));
+      toast(warningText(res.warnings, res.unchanged));
       if (!id) {
         clearDraft("new");
         // 새 와일드카드 탭이 저장한 와일드카드의 탭이 된다(같은 자리)
@@ -241,9 +246,9 @@ function Editor({ detail, tabKey, active, onPickVersion }: { detail: WildcardDet
       }
     } catch (e) {
       if (e instanceof ApiError) {
-        setMessage({ kind: "error", text: saveErrorText(e) });
+        setMessage(saveErrorText(e));
         if (typeof e.detail.item === "string") setErrorItem(e.detail.item);
-      } else setMessage({ kind: "error", text: e instanceof Error ? e.message : String(e) });
+      } else setMessage(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
       setDialog(null);
@@ -276,8 +281,8 @@ function Editor({ detail, tabKey, active, onPickVersion }: { detail: WildcardDet
     } catch (e) {
       if (e instanceof ApiError && e.code === "E_IN_USE") {
         const deps = (e.detail.dependents as Array<{ name: string }> | undefined)?.map((d) => d.name).join(", ");
-        setMessage({ kind: "error", text: `다른 와일드카드가 쓰고 있어 지울 수 없습니다: ${deps}` });
-      } else setMessage({ kind: "error", text: String(e) });
+        toast({ kind: "error", text: `다른 와일드카드가 쓰고 있어 지울 수 없습니다: ${deps}` });
+      } else toast({ kind: "error", text: String(e) });
     }
   };
 
@@ -346,7 +351,20 @@ function Editor({ detail, tabKey, active, onPickVersion }: { detail: WildcardDet
           </div>
         </div>
         <CategoryChips value={categories} onChange={setCategories} />
-        <textarea className="input editor-desc" value={doc.description ?? ""} placeholder="설명 (마크다운 아님, 글자 그대로 보입니다)" aria-label="설명" onChange={(e) => setDoc({ ...doc, description: e.target.value })} />
+        {/* 설명칸을 항목 입력칸으로 아는 사람이 있었다(사용자 요청 2026-11-09). 라벨을 달고 한 줄로 줄여, 내용은 아래 "항목"에 쓴다는 것을 보인다 */}
+        <div className="editor-desc-field">
+          <label className="label" htmlFor={descId}>
+            설명 <span className="text-muted">선택 · 뽑기에 쓰이지 않음</span>
+          </label>
+          <textarea
+            id={descId}
+            className="input editor-desc"
+            rows={Math.min(6, (doc.description ?? "").split("\n").length)}
+            value={doc.description ?? ""}
+            placeholder="둘러보기 카드에 보이는 소개 글 (글자 그대로 보입니다)"
+            onChange={(e) => setDoc({ ...doc, description: e.target.value })}
+          />
+        </div>
         <div className="editor-select">
           <label className="label">
             개수
@@ -367,9 +385,12 @@ function Editor({ detail, tabKey, active, onPickVersion }: { detail: WildcardDet
           </div>
           <GuideButton />
         </div>
+        <h2 className="editor-section-title">
+          항목 <span className="text-muted">{effective.items.length}개</span>
+        </h2>
         {message && (
-          <div className={`banner banner-${message.kind}`} role={message.kind === "error" ? "alert" : "status"}>
-            {message.text}
+          <div className="banner banner-error" role="alert">
+            {message}
           </div>
         )}
         {mode === "list" ? (
@@ -421,8 +442,8 @@ const toInt = (s: string) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-function warningText(ws: Warning[], unchanged: boolean): { kind: "warning" | "info"; text: string } {
-  if (ws.length === 0) return { kind: "info", text: unchanged ? "바뀐 내용이 없어 새 버전을 만들지 않았습니다." : "저장했습니다." };
+function warningText(ws: Warning[], unchanged: boolean): ToastInput {
+  if (ws.length === 0) return unchanged ? { kind: "info", text: "바뀐 내용이 없어 새 버전을 만들지 않았습니다." } : { kind: "success", text: "저장했습니다." };
   const name = (id: string) => getMeta(id)?.name ?? id;
   const parts = ws.map((w) =>
     w.code === "W_DEPTH" ? `${name(w.wildcard)}: 깊이 ${w.depth}(상한 16)라 전개가 항상 실패합니다` : w.code === "W_BUNDLE_SIZE" ? `${name(w.wildcard)}: 묶음이 2MB를 넘습니다` : `${name(w.wildcard)}: 후보 가중치 합이 0이 됩니다`,
@@ -457,21 +478,21 @@ function saveErrorText(e: ApiError): string {
   }
 }
 
+/** 버튼 글자는 바꾸지 않는다. "복사됨"으로 바꾸면 폭이 줄어 머리줄 줄바꿈이 흔들렸다(사용자 요청 2026-11-09). 알림은 토스트 */
 function CopyId({ id }: { id: string }) {
-  const [done, setDone] = useState(false);
+  const toast = useToast();
+  const failed = () => toast({ kind: "error", text: "클립보드에 쓸 수 없습니다(브라우저가 막음)" });
   return (
     <button
       type="button"
-      className="btn btn-ghost btn-sm"
-      title="ComfyUI 노드에 붙여 넣을 ID"
+      className="btn btn-ghost btn-sm copy-id"
+      title="ComfyUI 노드에 붙여 넣을 ID (누르면 복사)"
       onClick={() => {
-        void navigator.clipboard?.writeText(id).then(() => {
-          setDone(true);
-          setTimeout(() => setDone(false), 1200);
-        });
+        if (!navigator.clipboard) return failed();
+        navigator.clipboard.writeText(id).then(() => toast({ kind: "success", text: `ID ${id}를 복사했습니다` }), failed);
       }}
     >
-      {done ? "복사됨" : `ID ${id}`}
+      ID {id}
     </button>
   );
 }
@@ -506,7 +527,7 @@ function ReadOnly({ detail, mine, onPickVersion }: { detail: WildcardDetail; min
   const [likes, setLikes] = useState({ liked: detail.viewer.liked, count: detail.likes });
   const [fav, setFav] = useState(detail.viewer.favorited);
   const [importing, setImporting] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const toast = useToast();
   const [highlight, setHighlight] = useState<string | null>(null);
   const context = useEditorContext({ readOnly: true });
   const latest = detail.seq === detail.version;
@@ -529,14 +550,14 @@ function ReadOnly({ detail, mine, onPickVersion }: { detail: WildcardDetail; min
   const items = useMemo(() => fromDoc(detail.doc).items, [detail.doc]);
   useEffect(() => requestMeta(directRefs(detail.doc)), [detail.doc]);
 
-  const needLogin = () => setMessage("로그인해야 합니다.");
+  const needLogin = () => toast({ kind: "warning", text: "로그인해야 합니다." });
   const toggleLike = async () => {
     if (!user) return needLogin();
     try {
       const r = await api.like(detail.id, !likes.liked);
       setLikes({ liked: r.liked, count: r.likes });
     } catch (e) {
-      setMessage(e instanceof ApiError ? e.message : String(e));
+      toast({ kind: "error", text: e instanceof ApiError ? e.message : String(e) });
     }
   };
   const toggleFav = async () => {
@@ -546,7 +567,7 @@ function ReadOnly({ detail, mine, onPickVersion }: { detail: WildcardDetail; min
       setFav(r.favorited);
       await refreshFavorites();
     } catch (e) {
-      setMessage(e instanceof ApiError ? e.message : String(e));
+      toast({ kind: "error", text: e instanceof ApiError ? e.message : String(e) });
     }
   };
   const count = detail.doc.select?.count ?? DEFAULT_COUNT;
@@ -595,7 +616,6 @@ function ReadOnly({ detail, mine, onPickVersion }: { detail: WildcardDetail; min
           <CopyId id={detail.id} />
           <GuideButton />
         </div>
-        {message && <div className="banner banner-error">{message}</div>}
         <CategoryChips value={detail.categories} readOnly />
         {detail.doc.description && <p className="wc-desc">{detail.doc.description}</p>}
         <p className="text-muted">

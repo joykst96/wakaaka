@@ -239,6 +239,74 @@ body,
   color: var(--color-danger);
 }
 
+/* ---------------- 토스트 (components/Toast.tsx) ----------------
+   오른쪽 아래에 쌓인다. 틀은 화면 폭을 차지하되 클릭은 토스트에만 받는다 */
+.toaster {
+  position: fixed;
+  right: var(--toast-offset);
+  bottom: var(--toast-offset);
+  left: var(--toast-offset);
+  z-index: var(--toast-z);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+}
+.toast-region {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--toast-gap);
+  max-width: 100%;
+}
+.toast-region:not(:empty) + .toast-region:not(:empty) {
+  margin-top: var(--toast-gap);
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  max-width: var(--toast-max-width);
+  padding: var(--toast-padding);
+  border: var(--wk-border-width) solid var(--toast-border);
+  border-left: var(--toast-accent-width) solid var(--toast-info);
+  border-radius: var(--toast-radius);
+  background: var(--toast-bg);
+  color: var(--toast-fg);
+  box-shadow: var(--toast-shadow);
+  font: var(--font-body-sm);
+  pointer-events: auto;
+  animation: toast-in var(--transition-base);
+}
+.toast-success {
+  border-left-color: var(--toast-success);
+}
+.toast-warning {
+  border-left-color: var(--toast-warning);
+}
+.toast-error {
+  border-left-color: var(--toast-error);
+}
+.toast-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.toast-close {
+  flex: none;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--toast-enter-shift));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
 /* ---------------- 둘러보기 ---------------- */
 .explore-controls {
   display: flex;
@@ -355,8 +423,29 @@ body,
   align-items: center;
   gap: var(--gap-xs);
 }
-.editor-desc {
-  min-height: var(--wk-desc-min-height);
+/* ID 복사 버튼: 버튼 안에서 "ID"와 ID가 갈라지지 않게 한다(줄이 바뀌면 버튼째 다음 줄로 간다) */
+.copy-id {
+  white-space: nowrap;
+}
+/* 설명: 라벨을 달고 한 줄에서 시작해 쓴 만큼 늘어난다(field-sizing을 모르는 브라우저는 rows가 줄 수를 따른다).
+   항목 칸처럼 큰 빈 상자로 보이면 내용을 여기에 쓰는 사람이 있었다(사용자 요청 2026-11-09) */
+.editor-desc-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-xs);
+}
+/* ui.css의 textarea.input 최소 높이(여러 줄 상자)를 덮어쓴다 */
+textarea.editor-desc {
+  min-height: auto;
+  max-height: var(--wk-desc-max-height);
+  field-sizing: content;
+}
+.editor-section-title {
+  margin: 0;
+  font: var(--font-overline);
+}
+.editor-section-title .text-muted {
+  font: var(--font-label);
 }
 .editor-select {
   display: flex;
@@ -392,9 +481,17 @@ body,
 .item-row.is-error {
   background: var(--item-row-bg-error);
 }
-/* 주석 항목: 가중치를 쓰지 않으므로 흐리게 */
+/* 주석 항목: 가중치를 쓰지 않으므로 칸을 막고(ItemList) 점선·비활성 바탕으로 일반 행과 구분한다.
+   읽기 전용 보기는 모든 가중치 칸이 막혀 있으므로 :disabled가 아니라 행 클래스로 칠한다 */
 .item-row.is-comment .item-weight {
-  color: var(--color-fg-subtle);
+  border-style: dashed;
+  background: var(--item-weight-comment-bg);
+  color: var(--item-weight-comment-fg);
+  text-align: center;
+  text-decoration: line-through;
+}
+.item-row.is-comment .item-weight::placeholder {
+  color: var(--item-weight-comment-fg);
 }
 .item-handle {
   align-self: center;
@@ -494,6 +591,27 @@ body,
 }
 .item-add {
   padding: var(--item-row-padding);
+}
+/* 빈 목록: 첫 항목을 쓸 자리 */
+.item-empty {
+  min-height: var(--item-static-min-height);
+  padding: var(--item-empty-padding);
+  border: var(--wk-border-width) dashed var(--item-empty-border);
+  border-radius: var(--wk-radius);
+  background: transparent;
+  color: var(--color-fg-muted);
+  font: var(--font-body);
+  text-align: left;
+  cursor: text;
+}
+.item-empty:hover {
+  border-color: var(--color-accent);
+  color: var(--color-fg);
+}
+.item-empty:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-halo);
 }
 .static-empty {
   color: var(--color-fg-subtle);

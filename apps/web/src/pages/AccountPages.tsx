@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { invalidate, primeMeta } from "../app/cache.ts";
 import { Link, navigate } from "../app/router.tsx";
 import { useSession } from "../app/session.tsx";
+import { useToast } from "../components/Toast.tsx";
 import { api, ApiError, type Card } from "../lib/api.ts";
 import { CardGrid } from "./ExplorePage.tsx";
 
@@ -149,7 +150,9 @@ export function SettingsPage() {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [next2, setNext2] = useState("");
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // 입력 오류는 폼 안에 남기고, 바꾼 결과는 토스트(사용자 결정 2026-11-09)
+  const [msg, setMsg] = useState<string | null>(null);
+  const toast = useToast();
   if (user === null) {
     return (
       <p className="page-pad">
@@ -159,15 +162,16 @@ export function SettingsPage() {
   }
   const change = async (e: FormEvent) => {
     e.preventDefault();
-    if (next !== next2) return setMsg({ ok: false, text: "새 비밀번호 확인이 다릅니다." });
+    if (next !== next2) return setMsg("새 비밀번호 확인이 다릅니다.");
     try {
       await api.changePassword(current, next);
       setCurrent("");
       setNext("");
       setNext2("");
-      setMsg({ ok: true, text: "비밀번호를 바꿨습니다. 다른 기기의 로그인은 모두 풀렸습니다." });
+      setMsg(null);
+      toast({ kind: "success", text: "비밀번호를 바꿨습니다. 다른 기기의 로그인은 모두 풀렸습니다." });
     } catch (err) {
-      setMsg({ ok: false, text: messageOf(err) });
+      setMsg(messageOf(err));
     }
   };
   const logout = async () => {
@@ -200,8 +204,8 @@ export function SettingsPage() {
           <input id="n2" className="input" type="password" autoComplete="new-password" value={next2} onChange={(e) => setNext2(e.target.value)} required />
         </div>
         {msg && (
-          <p className={msg.ok ? "text-success" : "text-danger"} role="status">
-            {msg.text}
+          <p className="text-danger" role="alert">
+            {msg}
           </p>
         )}
         <button className="btn">바꾸기</button>

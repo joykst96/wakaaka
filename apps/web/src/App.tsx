@@ -7,6 +7,7 @@ import { TabsProvider, useTabs } from "./app/tabs.tsx";
 import { GuideButton } from "./components/Guide.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { TabBar } from "./components/TabBar.tsx";
+import { ToastProvider } from "./components/Toast.tsx";
 import { LoginPage, SettingsPage, SignupPage, UserPage } from "./pages/AccountPages.tsx";
 import { ExplorePage } from "./pages/ExplorePage.tsx";
 import { FoldersPage } from "./pages/FoldersPage.tsx";
@@ -14,11 +15,13 @@ import { WildcardPage } from "./pages/WildcardPage.tsx";
 
 export function App() {
   return (
-    <SessionProvider>
-      <TabsProvider>
-        <Shell />
-      </TabsProvider>
-    </SessionProvider>
+    <ToastProvider>
+      <SessionProvider>
+        <TabsProvider>
+          <Shell />
+        </TabsProvider>
+      </SessionProvider>
+    </ToastProvider>
   );
 }
 
