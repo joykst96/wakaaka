@@ -16,6 +16,15 @@ export type Route =
   | { name: "settings" }
   | { name: "notFound" };
 
+/** 바깥 링크. 주소는 아래 고정 목록에서만 고른다(사용자 문자열 없음). 화면이 아니라서 Route에 넣지 않는다(navigate로 못 간다) */
+export type External = { name: "external"; to: keyof typeof EXTERNAL };
+
+/** 바깥 링크 고정 목록: 태그 데이터 출처 표시(DESIGN 6절 "태그 데이터 원천") */
+export const EXTERNAL = {
+  tagData: "https://huggingface.co/datasets/mengod-hf/danbooru-tags-kr",
+  ccBySa4: "https://creativecommons.org/licenses/by-sa/4.0/deed.ko",
+} as const;
+
 export const isWildcardId = (s: string): boolean => BASE62_12.test(s);
 export const isUsername = (s: string): boolean => USERNAME.test(s);
 
@@ -34,7 +43,7 @@ export function parseRoute(pathname: string): Route {
 }
 
 /** 화면 → 경로. 검증에 실패하면 둘러보기로 보낸다(사용자 문자열이 href에 들어가지 않게) */
-export function hrefOf(r: Route): string {
+export function hrefOf(r: Route | External): string {
   switch (r.name) {
     case "explore":
     case "notFound":
@@ -51,5 +60,7 @@ export function hrefOf(r: Route): string {
       return "/signup";
     case "settings":
       return "/settings";
+    case "external":
+      return Object.hasOwn(EXTERNAL, r.to) ? EXTERNAL[r.to] : "/";
   }
 }

@@ -150,7 +150,7 @@ tag          (id, name UNIQUE, category, post_count,
               description /* CSV 원문 그대로 */, body /* 분류 표시·키워드를 뗀 본문(화면용) */,
               keywords TEXT[], other_names TEXT[], major_category NULL, minor_category NULL, is_deprecated,
               name_key /* 밑줄·공백을 뺀 소문자. 영문 검색 */, ko_text /* 키워드 + 본문 소문자. 한국어 부분 일치 */)
-tag_keyword  (tag_id, key /* 공백을 뺀 소문자 */, kind /* 0 키워드 전체·한글 별명, 1 키워드 낱말 */)  -- 한국어 접두 검색
+tag_keyword  (tag_id, key /* 공백을 뺀 소문자 */, kind /* 0 키워드 전체·한글 별명, 1 키워드 낱말 */, post_count /* tag 값 복사, 0006 */)  -- 한국어 접두 검색. 색인 (key, kind, post_count desc, tag_id)
 tag_alias    (alias_name, tag_id)   -- Danbooru active alias. 지금 데이터에 없어 비어 있다(사용자 결정, 2026-11-04)
 tag_import   (id, file_name, file_sha256, file_size, row_count, columns, stats JSONB, imported_at)  -- 태그 데이터 버전
 ```
@@ -172,10 +172,11 @@ WITH RECURSIVE deps(wildcard_id, hash) AS (
 SELECT d.wildcard_id, d.hash, c.doc FROM deps d JOIN wc_content c USING (hash);  -- lock과 docs를 한 번에
 ```
 
-- 태그 데이터 원천: 별도 프로젝트 `danbooru-tag`의 산출물(`danbooru-tags.csv`). 현재는 4열 CSV(`name,category,post_count,description`)이고, 최종본은 6열(대분류·소분류 추가)이 될 예정이다. 이 프로젝트는 읽기만 한다. 한국어 설명과 키워드로 태그를 한국어로 검색할 수 있다.
+- 태그 데이터 원천(사용자 결정, 2026-11-08 교체): Hugging Face [`mengod-hf/danbooru-tags-kr`](https://huggingface.co/datasets/mengod-hf/danbooru-tags-kr)의 통합본 `danbooru-tags-kr-2026-11-04.csv`(150,993행). 한국어 번역·설명·분류는 CC BY-SA 4.0이라 README와 사이트 안내에 출처와 라이선스를 적는다. 파일은 저장소에 넣지 않고 이 PC의 `data/`(git 무시)에 둔다. 전에 쓰던 `danbooru-tag` 프로젝트의 `danbooru-tags.csv`(헤더 있는 형식)도 계속 읽을 수 있다. 그쪽 6열 최종본이 나오면 다시 고를 수 있다.
 - 태그 가져오기(Phase 5, 2026-11-04, 근거는 `NOTES.md` Phase 5):
   - **열 이름으로 읽는다.** `name`, `category`, `post_count`는 필수, `description`, `major_category`, `minor_category`, `keywords`, `other_names`는 있으면 쓰고 없으면 비운다. 모르는 열 이름은 무시하고 보고한다.
-  - 예외 하나: 지금 CSV는 헤더가 4열인데 뒤쪽 42,947행이 이름 없는 다섯째 열(위키 other_names, `|` 구분)을 가진다. 헤더에 `other_names`가 없고 행이 헤더보다 정확히 한 칸 많으면 그 칸을 `other_names`로 읽는다. 그 밖의 열 수 불일치는 오류로 멈춘다.
+  - **헤더 없는 형식**(mengod-hf): 첫 행에 `name` 열이 없으면 헤더가 없다고 보고 `name,category,post_count,description` 4열 고정으로 읽는다(첫 행도 데이터). 이 형식만 다음을 더 한다. 태그 이름의 공백을 밑줄로 되돌린다(이 형식은 Danbooru 이름의 밑줄을 모두 공백으로 적는다. 되돌려도 겹치는 이름이 없고, 옛 CSV와 겹치는 이름은 모두 같은 이름이 된다. NOTES 2026-11-08). 키워드 맨 앞의 묶음 표시(`<교복>`, `<캐릭터>`)는 꺾쇠만 떼어 키워드로 둔다(school_uniform의 `<교복>`처럼 그 태그를 부르는 이름인 경우가 많아, 빼면 `교복` 검색이 school_uniform을 못 찾는다. `캐릭터`처럼 넓은 것은 같은 키워드끼리 post_count 순이라 해가 적다). 설명 맨 앞의 한 단계 표시 `[작가]`도 본문에서 뗀다. 대분류 앞뒤 공백은 지운다.
+  - 예외 하나(헤더 있는 형식): 옛 `danbooru-tags.csv`는 헤더가 4열인데 뒤쪽 42,947행이 이름 없는 다섯째 열(위키 other_names, `|` 구분)을 가진다. 헤더에 `other_names`가 없고 행이 헤더보다 정확히 한 칸 많으면 그 칸을 `other_names`로 읽는다. 그 밖의 열 수 불일치는 오류로 멈춘다.
   - 설명이 `[대분류 > 소분류] 본문 키워드: a, b`이면 `body`와 `keywords`를 뽑는다. 대괄호 분류는 예전 체계라 `major_category`·`minor_category`에 넣지 않는다(두 열은 CSV에 그 열이 있을 때만 채운다). 원문은 `description`에 그대로 둔다.
   - 다시 돌려도 된다: 한 트랜잭션에서 태그 표들을 비우고 새로 넣는다(읽는 쪽은 커밋 전까지 옛 데이터를 본다). 파일 SHA-256이 마지막 가져오기와 같으면 건너뛴다(`--force`로 강제). `tag_import`에 파일 이름·해시·크기·행 수·열 목록·시각을 남긴다. 와일드카드 문서는 태그 ID를 쓰지 않으므로(3절) 태그를 다시 넣어도 저장 데이터에 영향이 없다.
   - other_names는 별명이지 정규 이름 병합 근거가 아니다(`danbooru-tag` 규칙). `tag_alias`에 넣지 않고, 한글이 든 것만 한국어 검색 키워드처럼 쓴다.
@@ -210,6 +211,7 @@ SELECT d.wildcard_id, d.hash, c.doc FROM deps d JOIN wc_content c USING (hash); 
 - `q`에 한글이 있으면 한국어 검색, 없으면 영문 검색. 앞뒤 공백을 지우고 비면 빈 목록. 64자, 문자열 검사(9절). 결과는 최대 20개, 각 `{name, category, postCount, body, keywords}`.
 - 영문: 이름에서 밑줄·공백을 빼고 소문자로 비교한다(`long h`, `long_h`, `longh`가 같다). 이름 키 접두 일치를 먼저 post_count 순으로, 모자라면 3글자 이상일 때 부분 일치를 post_count 순으로.
 - 한국어: 순위는 키워드 전체가 같음(공백 무시) → 키워드 접두 → 키워드 낱말 접두 → (3글자 이상) 키워드·본문 부분 일치, 같은 단계는 post_count 순. 한글 other_names는 키워드와 같이 친다. 1~2글자는 trgm이 색인을 못 써서 키워드 접두 표(`tag_keyword`)로만 찾는다(실측 `NOTES.md`).
+  - 구현(2026-11-08): 단계마다 post_count 순으로 2×20개만 고르고 합친다(한 문장). 키워드 단계는 `tag_keyword` 색인만 읽고, 부분 일치는 키워드 단계가 20개를 못 채웠을 때만 돈다. 모두 모아 정렬하던 처음 구현은 새 CSV에서 `캐릭터`(키워드·본문 5만 개 일치)가 266ms였다. 처음 구현은 대조 기준으로 남기고 실제 CSV 질의 150개 이상에서 결과가 같음을 테스트한다.
 - LIKE 패턴은 `\ % _`를 이스케이프한다. 태그 데이터는 가져오기 때만 바뀌므로 응답에 `Cache-Control: public, max-age=300`을 붙인다. 웹은 같은 `q`의 결과를 메모리에 둔다.
 
 ### 묶음 형식
@@ -365,7 +367,8 @@ SELECT d.wildcard_id, d.hash, c.doc FROM deps d JOIN wc_content c USING (hash); 
 - 복구 확인: `deploy/prod/restore-check.sh <덤프>`가 덤프를 임시 Postgres 컨테이너에 풀어 표마다 행 수를 운영 DB와 대조하고 지운다. 실제 복구는 app을 멈추고 `pg_restore --clean --if-exists` 뒤 app을 띄운다(`deploy/README.md`).
 - 태그 CSV는 테스트와 같은 방식(해시 비교 후 전송, 컨테이너 안에서 가져오기)으로 운영 폴더의 `data/`에 넣는다.
 - **기본 와일드카드**(사용자 결정, 2026-11-04): 운영은 빈 DB에 태그 CSV로 만든 기본 와일드카드만 넣고 시작한다(테스트의 예시 42개는 넣지 않는다). 생성기 `fixtures/tools/build-defaults.ts`, 넣기 `deploy/prod-defaults.sh`(전용 계정에 이미 와일드카드가 있으면 멈춘다).
-  - 대상: 설명 맨 앞이 `[대분류 > 소분류]`이고, 그 표시를 뺀 본문이나 키워드에 한글이 있는 행(`danbooru-tags.csv` 기준 71,142개). **NSFW를 거르지 않는다**(테스트 예시와 다름).
+  - 대상: 설명 맨 앞이 `[대분류 > 소분류]`이고, 그 표시를 뺀 본문이나 키워드에 한글이 있는 행(옛 `danbooru-tags.csv` 기준 71,142개). **NSFW를 거르지 않는다**(테스트 예시와 다름).
+  - 헤더 없는 형식(mengod-hf, 2026-11-08 사용자 결정): 이 형식은 대괄호 분류를 태그마다 자유롭게 붙여 일반 태그의 `대분류 > 소분류` 쌍이 14,480개다(대부분 1~2개). 그래서 일반 태그는 **태그가 10개 이상인 쌍만** 와일드카드로 만들고(381개, 일반 31,763개 중 10,401개), 나머지 일반 태그는 기본 와일드카드에 넣지 않는다(자동완성에는 있다). 일반이 아닌 분류는 대괄호 표시와 상관없이 전부 넣는다. 운영에 이미 넣은 옛 CSV의 115개는 그대로 둔다(바꾸려면 사용자가 요청할 때 따로).
   - 소유자: 로그인하지 않는 전용 계정 `wakaaka`(비밀번호 무작위, 어디에도 남기지 않음). 사용자는 둘러보기에서 가져와 쓴다.
   - 묶는 방식: Danbooru 일반(general) 태그는 `[대분류 > 소분류]`마다 하나(이름 `대분류 > 소분류`). 아티스트·캐릭터·작품·메타 태그는 소분류를 보지 않고 분류 전체를 post_count 내림차순으로 5,000개씩 잘라 `아티스트 1`, `아티스트 2` …(문서 항목 상한이 5,000).
   - 항목은 태그 하나씩, 가중치는 모두 1, 개수 1~1. 텍스트는 자동완성과 같은 표기(`promptTag`, `escapeText`). 항목 ID는 태그 이름의 해시라 다시 만들어도 같다. 고정 분류(3절)는 대분류로 정한다.
@@ -452,8 +455,8 @@ Impact Pack 와일드카드 노드(`ImpactWildcardProcessor`·`ImpactWildcardEnc
   1. `git ls-files` 기준으로 작업 트리를 tar로 묶어 ssh로 `~/docker/wakaaka-test/src`에 푼다. 커밋하지 않은 변경도 올라간다.
   2. 서버에서 `docker compose -p wakaaka-test up -d --build`를 실행한다.
 - `compose.yml`과 `.env`는 `~/docker/wakaaka-test`에 둔다. DB는 이름 있는 볼륨에 두고, `deploy/test-reset.sh`로 비운 뒤 시드를 다시 넣는다.
-- 시드: 예시 와일드카드는 `fixtures/`의 재료 CSV(분야별 태그 목록)로 생성기가 현재 스키마에 맞춰 만든다. 와일드카드 문서를 저장해 두지 않는 이유는 스키마가 바뀔 때마다 고쳐야 해서다. 태그 테이블은 `danbooru-tags.csv`에서 가져온다.
-  - 태그 CSV(16MB)는 저장소에 넣지 않는다(사용자 결정, 2026-11-04). 배포 스크립트가 이 PC의 CSV를 `~/docker/wakaaka-test/data/`로 따로 보내고(해시가 같으면 건너뜀) compose가 app에 읽기 전용으로 마운트한다. `test-reset.sh`가 컨테이너 안에서 가져오기를 돌린다. 로컬 DB는 `npm run tags:import -w @wakaaka/api -- <csv>`.
+- 시드: 예시 와일드카드는 `fixtures/`의 재료 CSV(분야별 태그 목록)로 생성기가 현재 스키마에 맞춰 만든다. 와일드카드 문서를 저장해 두지 않는 이유는 스키마가 바뀔 때마다 고쳐야 해서다. 태그 테이블은 태그 CSV(6절 "태그 데이터 원천")에서 가져온다.
+  - 태그 CSV(16~28MB)는 저장소에 넣지 않는다(사용자 결정, 2026-11-04). 배포 스크립트가 이 PC의 CSV를 `~/docker/wakaaka-test/data/`로 따로 보내고(해시가 같으면 건너뜀) compose가 app에 읽기 전용으로 마운트한다. `test-reset.sh`가 컨테이너 안에서 가져오기를 돌린다. 로컬 DB는 `npm run tags:import -w @wakaaka/api -- <csv>`.
 - Python 테스트에 pytest를 쓰지 않는다. ComfyUI가 쓰는 `python_embeded`에 패키지를 늘리지 않기 위해서다.
 - 노드 테스트는 마지막에 한다. 그 전까지는 `curl`로 `/api/w/{id}/bundle`과 `/resolve` 응답을 확인한다.
 - CI는 당분간 두지 않는다. 커밋 전에 로컬에서 `npm test`를 돌린다.

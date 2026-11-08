@@ -1,10 +1,14 @@
 // Phase 5 API: 태그 가져오기(다시 돌리기, 데이터 버전), 자동완성(영문·한국어), 이름 조회 (DESIGN 6절, 7절 "태그 자동완성").
-// 실제 CSV(11.4만 행)는 WAKAAKA_TAGS_CSV를 줄 때만 맨 아래 테스트가 읽는다.
+// 실제 CSV(새 것 15.1만 행, 옛 것 11.4만 행)는 파일이 있을 때만 맨 아래 테스트가 읽는다.
 
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { sql } from "kysely";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import * as repo from "../src/repositories/tags.ts";
+import { escapeLike } from "../src/repositories/social.ts";
+import { hasHangul, koKey } from "../src/services/tagcsv.ts";
 import { importTags } from "../src/services/tags.ts";
 import { Client, setupEnv, type TestEnv } from "./helpers.ts";
 
@@ -216,10 +220,64 @@ describe("이름 조회 (표기 lint용)", () => {
   });
 });
 
-const REAL = process.env.WAKAAKA_TAGS_CSV;
-describe.runIf(REAL !== undefined && existsSync(REAL))("실제 danbooru-tags.csv", () => {
+// 새 CSV: WAKAAKA_TAGS_CSV, 없으면 data/의 mengod-hf 헤더 없는 형식. 옛 CSV: 저장소 옆 danbooru-tag/. 파일이 없으면 건너뛴다(DESIGN 6절)
+const NEW_CSV = process.env.WAKAAKA_TAGS_CSV ?? fileURLToPath(new URL("../../../data/danbooru-tags-kr-2026-11-04.csv", import.meta.url));
+const OLD_CSV = fileURLToPath(new URL("../../../../danbooru-tag/danbooru-tags.csv", import.meta.url));
+
+describe("헤더 없는 형식 가져오기", () => {
+  it("이름은 밑줄로 저장되고 묶음 표시도 한국어 검색에 쓰인다", async () => {
+    const lines = [
+      'school uniform,0,500,"[의상 > 교복] 학생들이 입는 교복의 총칭임. 키워드: <교복>, 학생복"',
+      'serafuku,0,400,"[의상 > 교복] 세일러복. 키워드: <교복>, 세일러복"',
+      'long hair,0,900,"[패션 > 헤어스타일] 긴 머리. 키워드: <헤어스타일>, 긴 머리, 장발"',
+    ];
+    const r = await importTags(env.db, { fileName: "kr.csv", bytes: enc(lines.join("\r\n") + "\r\n") });
+    expect(r).toMatchObject({ skipped: false, rows: 3, columns: ["name", "category", "post_count", "description"], stats: { rows: 3, extraColumnRows: 0, withKeywords: 3, withOtherNames: 0 } });
+    expect(await names("교복")).toEqual(["school_uniform", "serafuku"]);
+    expect(await names("long h")).toEqual(["long_hair"]);
+    expect((await suggest("장발")).body.tags[0]).toEqual({ name: "long_hair", category: 0, postCount: 900, body: "긴 머리.", keywords: ["헤어스타일", "긴 머리", "장발"] });
+  });
+});
+
+describe.runIf(existsSync(NEW_CSV))("실제 새 CSV(mengod-hf)", () => {
+  it("행 수, 분류, 키워드, 검색", { timeout: 300_000 }, async () => {
+    const r = await importTags(env.db, { fileName: "danbooru-tags-kr-2026-11-04.csv", bytes: readFileSync(NEW_CSV) });
+    expect(r.rows).toBe(150_993);
+    expect(r.stats).toMatchObject({ rows: 150_993, extraColumnRows: 0, withKeywords: 150_993, withOtherNames: 0 });
+    const cats = await sql<{ category: number; n: string }>`select category, count(*) n from tag group by 1 order by 1`.execute(env.db);
+    expect(cats.rows.map((x) => [x.category, Number(x.n)])).toEqual([[0, 31_763], [1, 42_413], [3, 15_734], [4, 60_570], [5, 513]]);
+    expect((await names("long h"))[0]).toBe("long_hair");
+    expect((await names("긴 머리"))[0]).toBe("long_hair");
+    expect((await names("미쿠"))[0]).toBe("hatsune_miku");
+    expect((await names("교복"))[0]).toBe("school_uniform");
+    expect((await names("^_^"))[0]).toBe("^_^");
+
+    // 한국어 단계별 질의가 처음 구현(모두 모아 정렬)과 같은 결과인지: 고정 검색어 + 키워드에서 뽑은 접두(1~3글자)와 전체
+    const fixed = ["가", "머리", "장발", "미쿠", "교복", "흑발", "긴 머리", "고양이 귀", "레이무", "캐릭터", "작가", "포켓몬", "웃음", "블루 아카이브", "하츠네", "작품", "캐릭터를", "타마키"];
+    const sample = await sql<{ key: string }>`select key from tag_keyword where kind = 0 order by md5(key || tag_id) limit 80`.execute(env.db);
+    const qs = new Set(fixed);
+    for (const { key } of sample.rows) {
+      const ch = [...key];
+      for (const n of [1, 2, 3]) if (ch.length > n) qs.add(ch.slice(0, n).join(""));
+      qs.add(key);
+    }
+    let compared = 0;
+    for (const q of qs) {
+      if (!hasHangul(q)) continue;
+      const norm = q.trim().replace(/\s+/g, " ").toLowerCase(); // services/tags.ts suggest와 같게
+      const key = koKey(norm);
+      const contains = [...key].length >= 3 ? "%" + escapeLike(norm) + "%" : null;
+      const args = [key, escapeLike(key) + "%", contains, 20] as const;
+      expect(await repo.suggestKorean(env.db, ...args), q).toEqual(await repo.suggestKoreanReference(env.db, ...args));
+      compared++;
+    }
+    expect(compared).toBeGreaterThan(150);
+  });
+});
+
+describe.runIf(existsSync(OLD_CSV))("실제 옛 danbooru-tags.csv", () => {
   it("행 수, 다섯째 열, 키워드, 검색", { timeout: 120_000 }, async () => {
-    const bytes = readFileSync(REAL!);
+    const bytes = readFileSync(OLD_CSV);
     const r = await importTags(env.db, { fileName: "danbooru-tags.csv", bytes });
     expect(r.rows).toBe(114_092);
     expect(r.stats).toMatchObject({ rows: 114_092, extraColumnRows: 42_947, withKeywords: 71_142, withOtherNames: 13_426 });

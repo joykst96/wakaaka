@@ -1,7 +1,7 @@
 // 태그 CSV 읽기 (DB 없음). DESIGN 6절 "태그 가져오기", NOTES Phase 5 "danbooru-tags.csv 형식".
 
 import { describe, expect, it } from "vitest";
-import { keywordRows, koText, nameKey, parseCsv, readTagCsv, splitDescription, TagCsvError } from "../src/services/tagcsv.ts";
+import { keywordRows, koText, nameKey, parseCsv, readTagCsv, splitDescription, splitHeaderlessDescription, TagCsvError } from "../src/services/tagcsv.ts";
 
 const rows = (s: string) => [...parseCsv(s)].map((r) => r.fields);
 
@@ -103,6 +103,72 @@ describe("readTagCsv", () => {
     expect(() => readTagCsv("name,category,post_count,description\na,0,1,x\u001fy\n")).toThrow(/not allowed/);
     expect(() => readTagCsv("name,category,post_count,description\na,0,1,\ud800\n")).toThrow(/not allowed/);
     expect(() => readTagCsv("")).toThrow(/empty file/);
+  });
+});
+
+// mengod-hf/danbooru-tags-kr 2026-11-04 통합본의 실제 행 모양(헤더 없음, 이름의 밑줄이 공백, 키워드 맨 앞 묶음 표시)
+const HEADERLESS = [
+  '1girl,0,8619766,"[인물 > 인원수] 여성 캐릭터가 한 명 등장함. 키워드: <인원>, 여자 1명, 여성 한명"',
+  'school uniform,0,1,"[의상 > 교복] 학생들이 입는 교복의 총칭임. 키워드: <교복>, 학생복"',
+  '^ ^,0,1,"[표정 > 눈] 위로 솟은 아치 모양의 감은 눈. 키워드: <웃는 눈>, 웃는 눈"',
+  'nagase haruhito,1,683,"[작가] 나가세 하루히토라는 필명. 키워드: <작가>, 나가세 하루히토, N-H"',
+  'hideyoshi (swliyhbpe9xqqze),1,99,"[ 작가 > 히데요시 (swliyhbpe9xqqze)] 작가 태그. 키워드: <작가>, 히데요시"',
+  "\"don't say \"\"lazy\"\"\",3,500,\"[작품 > 노래] 노래. 키워드: <노래>\"",
+  "",
+].join("\r\n");
+
+describe("readTagCsv 헤더 없는 형식 (mengod-hf)", () => {
+  const r = readTagCsv(HEADERLESS);
+  it("첫 행에 name 열이 없으면 고정 4열, 첫 행도 데이터", () => {
+    expect(r.headerless).toBe(true);
+    expect(r.header).toEqual(["name", "category", "post_count", "description"]);
+    expect(r.records).toHaveLength(6);
+    expect(r.extraColumnRows).toBe(0);
+  });
+  it("이름의 공백은 밑줄로 되돌린다", () => {
+    expect(r.records.map((x) => x.name)).toEqual(["1girl", "school_uniform", "^_^", "nagase_haruhito", "hideyoshi_(swliyhbpe9xqqze)", 'don\'t_say_"lazy"']);
+  });
+  it("묶음 표시는 꺾쇠를 떼어 키워드로(겹치면 한 번), 한 단계 표시 [작가]도 본문에서 뗀다", () => {
+    expect(r.records[0]).toEqual({
+      name: "1girl",
+      category: 0,
+      postCount: 8619766,
+      description: "[인물 > 인원수] 여성 캐릭터가 한 명 등장함. 키워드: <인원>, 여자 1명, 여성 한명",
+      body: "여성 캐릭터가 한 명 등장함.",
+      keywords: ["인원", "여자 1명", "여성 한명"],
+      otherNames: [],
+      majorCategory: null,
+      minorCategory: null,
+    });
+    expect(r.records[1]!.keywords).toEqual(["교복", "학생복"]);
+    expect(r.records[2]!.keywords).toEqual(["웃는 눈"]);
+    expect(r.records[3]).toMatchObject({ body: "나가세 하루히토라는 필명.", keywords: ["작가", "나가세 하루히토", "N-H"] });
+    expect(r.records[4]!.body).toBe("작가 태그.");
+    expect(keywordRows(r.records[1]!)).toEqual([
+      { key: "교복", kind: 0 },
+      { key: "학생복", kind: 0 },
+    ]);
+  });
+  it("splitHeaderlessDescription: 키워드 아닌 꺾쇠·대괄호는 그대로", () => {
+    expect(splitHeaderlessDescription("[표정] 본문 [x]. 키워드: <a>, b <c>, [d]")).toEqual({ body: "본문 [x].", keywords: ["a", "b <c>", "[d]"] });
+    expect(splitHeaderlessDescription("[인물 > 인원수] 본문 키워드: <>, x")).toEqual({ body: "본문", keywords: ["x"] });
+  });
+  it("헤더 있는 형식에는 이 규칙을 쓰지 않는다", () => {
+    const old = readTagCsv('name,category,post_count,description\na,0,1,"[작가] 본문 키워드: <작가>, x"\n');
+    expect(old.headerless).toBe(false);
+    expect(old.records[0]).toMatchObject({ body: "[작가] 본문", keywords: ["<작가>", "x"] });
+  });
+  it("열 수, 밑줄·앞뒤·겹친 공백 이름, 공백을 되돌린 뒤의 중복, 분류·포스트 수는 오류", () => {
+    expect(() => readTagCsv('a,0,1,"x",extra\n')).toThrow(/line 1: expected 4 fields, got 5 \(no header row/);
+    expect(() => readTagCsv("a,0,1\n")).toThrow(/expected 4 fields, got 3/);
+    expect(() => readTagCsv("long_hair,0,1,x\n")).toThrow(/bad tag name/);
+    expect(() => readTagCsv(" a,0,1,x\n")).toThrow(/bad tag name/);
+    expect(() => readTagCsv("a  b,0,1,x\n")).toThrow(/bad tag name/);
+    expect(() => readTagCsv("a\tb,0,1,x\n")).toThrow(/bad tag name/);
+    expect(() => readTagCsv("long hair,0,1,x\nlong hair,0,2,y\n")).toThrow(/line 2: duplicate tag name long_hair/);
+    expect(() => readTagCsv("a,2,1,x\n")).toThrow(/bad category 2/);
+    expect(() => readTagCsv("a,0,x,x\n")).toThrow(/bad post_count/);
+    expect(() => readTagCsv("a,0,1,x\u0000\n")).toThrow(/not allowed/);
   });
 });
 

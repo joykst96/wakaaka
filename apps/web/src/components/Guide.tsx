@@ -3,6 +3,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { exampleOutputs, GUIDE, type GuideExample } from "../lib/guide.ts";
+import { hrefOf } from "../lib/routes.ts";
 import { linePrefixLength } from "../lib/textview.ts";
 import { StaticText } from "../editor/StaticText.tsx";
 import { Dialog } from "./Dialogs.tsx";
@@ -81,6 +82,18 @@ export function GuideDialog({ onClose }: { onClose(): void }) {
           <Example key={`${i}-${k}`} ex={ex} />
         ))}
       </section>
+      {/* 태그 데이터 출처 표시(CC BY-SA 4.0, DESIGN 6절 "태그 데이터 원천") */}
+      <p className="text-muted guide-credit">
+        태그 자동완성의 한국어 설명과 키워드:{" "}
+        <a href={hrefOf({ name: "external", to: "tagData" })} target="_blank" rel="noopener noreferrer">
+          mengod-hf/danbooru-tags-kr
+        </a>{" "}
+        (
+        <a href={hrefOf({ name: "external", to: "ccBySa4" })} target="_blank" rel="noopener noreferrer">
+          CC BY-SA 4.0
+        </a>
+        ). Danbooru 태그 이름을 밑줄 표기로 바꿔 씁니다.
+      </p>
       <div className="dialog-actions">
         <button type="button" className="btn btn-secondary" onClick={() => setI(i - 1)} disabled={i === 0}>
           이전

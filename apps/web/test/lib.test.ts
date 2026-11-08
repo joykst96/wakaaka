@@ -28,6 +28,12 @@ describe("경로와 링크 (DESIGN 9절 7항)", () => {
       expect(hrefOf({ name: "user", username }), username).toBe("/");
     }
   });
+
+  test("바깥 링크는 고정 목록에서만, 목록에 없는 이름은 /", () => {
+    expect(hrefOf({ name: "external", to: "tagData" })).toBe("https://huggingface.co/datasets/mengod-hf/danbooru-tags-kr");
+    expect(hrefOf({ name: "external", to: "ccBySa4" })).toBe("https://creativecommons.org/licenses/by-sa/4.0/deed.ko");
+    for (const to of ["toString", "__proto__", "javascript:alert(1)"]) expect(hrefOf({ name: "external", to: to as "tagData" }), to).toBe("/");
+  });
 });
 
 describe("편집 문서 ↔ 저장 문서", () => {

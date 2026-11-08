@@ -1,16 +1,18 @@
 // 운영 기본 와일드카드 생성기 (DESIGN 10절 "기본 와일드카드", fixtures/tools/build-defaults.ts).
-// 합성 CSV로 묶는 규칙을 보고, 실제 danbooru-tags.csv가 있으면 전부 일반 저장 경로(seedExamples)로 넣어 본다.
+// 합성 CSV로 묶는 규칙을 보고, 실제 CSV(새 것, 옛 것)가 있으면 전부 일반 저장 경로(seedExamples)로 넣어 본다.
 
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { expand } from "@wakaaka/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { buildDefaults } from "../../../fixtures/tools/build-defaults.ts";
+import { buildDefaults, sourceLabelFor } from "../../../fixtures/tools/build-defaults.ts";
 import { seedExamples } from "../src/services/seed.ts";
 import { Client, setupEnv, type TestEnv } from "./helpers.ts";
 
-// 없으면 저장소 옆 폴더 danbooru-tag/의 CSV. 둘 다 없으면 이 묶음은 건너뛴다
-const REAL_CSV = process.env.WAKAAKA_TAGS_CSV ?? fileURLToPath(new URL("../../../../danbooru-tag/danbooru-tags.csv", import.meta.url));
+// 옛 CSV: 저장소 옆 폴더 danbooru-tag/의 헤더 있는 형식. 새 CSV: WAKAAKA_TAGS_CSV, 없으면 data/의 mengod-hf 헤더 없는 형식(DESIGN 6절).
+// 파일이 없으면 그 묶음은 건너뛴다
+const OLD_CSV = fileURLToPath(new URL("../../../../danbooru-tag/danbooru-tags.csv", import.meta.url));
+const NEW_CSV = process.env.WAKAAKA_TAGS_CSV ?? fileURLToPath(new URL("../../../data/danbooru-tags-kr-2026-11-04.csv", import.meta.url));
 
 function csv(rows: Array<[string, number, number, string]>): string {
   const q = (s: string) => `"${s.replaceAll('"', '""')}"`;
@@ -87,7 +89,77 @@ describe("묶는 규칙 (합성 CSV)", () => {
   });
 });
 
-describe.skipIf(!existsSync(REAL_CSV))("실제 danbooru-tags.csv 전부를 일반 저장 경로로", () => {
+describe("헤더 없는 형식(mengod-hf)의 묶는 규칙 (합성 CSV)", () => {
+  const q = (s: string) => `"${s.replaceAll('"', '""')}"`;
+  const big = Array.from({ length: 10 }, (_, i) => `hair_${i},0,${1000 - i},${q(`[패션 > 헤어스타일] 머리 ${i}. 키워드: <헤어스타일>, 머리 ${i}`)}`);
+  const small = Array.from({ length: 9 }, (_, i) => `thing_${i},0,${500 - i},${q(`[사물 > 작은 묶음] 물건 ${i}. 키워드: <물건>`)}`);
+  const lines = [
+    ...big.map((l) => l.replace(/^hair_(\d)/, "hair $1")), // 이 형식은 이름의 밑줄을 공백으로 적는다
+    ...small.map((l) => l.replace(/^thing_(\d)/, "thing $1")),
+    `raised inner eyebrows,0,900,${q("[표정] 눈썹 안쪽이 올라감. 키워드: <눈썹>, 팔자 눈썹")}`, // 한 단계 표시는 일반 쌍이 아니다
+    `nagase haruhito,1,683,${q("[작가] 나가세 하루히토라는 작가. 키워드: <작가>, 나가세 하루히토")}`, // 일반이 아니면 표시와 상관없이 넣는다
+    `monk 1 (sekaiju),4,21,${q("[캐릭터 > 몽크 1] 몽크 1 캐릭터. 키워드: <캐릭터>, 몽크 1")}`,
+  ];
+  const r = buildDefaults(lines.join("\r\n") + "\r\n", "LABEL");
+  const m = byName(r);
+
+  it("일반 태그는 태그 10개 이상인 쌍만, 나머지 일반 태그는 건너뛴 수로 센다", () => {
+    expect([...m.keys()].sort()).toEqual(["아티스트 1", "캐릭터 1", "패션 > 헤어스타일"]);
+    expect(m.get("패션 > 헤어스타일")!.doc.items.map((i) => i.text)).toEqual(Array.from({ length: 10 }, (_, i) => `hair ${i}`));
+    expect(m.get("패션 > 헤어스타일")!.categories).toEqual([6]);
+    expect(m.get("패션 > 헤어스타일")!.doc.description).toMatch(/10개 이상인 것만/);
+    expect(r.skippedGeneral).toBe(10);
+    expect(r.used).toBe(12);
+    expect(m.get("아티스트 1")!.doc.items.map((i) => i.text)).toEqual(["nagase haruhito"]);
+    expect(m.get("캐릭터 1")!.doc.items.map((i) => i.text)).toEqual(["monk 1 \\(sekaiju\\)"]);
+  });
+
+  it("출처 표시에 데이터셋 이름과 라이선스", () => {
+    expect(sourceLabelFor("danbooru-tags.csv", "6159f20490ecdcd9", true)).toBe("Hugging Face mengod-hf/danbooru-tags-kr (sha256 6159f20490ec), 한국어 설명 CC BY-SA 4.0");
+    expect(sourceLabelFor("danbooru-tags.csv", "775b0abbad1fe75c", false)).toBe("danbooru-tags.csv (sha256 775b0abbad1f)");
+  });
+});
+
+/** 기본 와일드카드를 일반 저장 경로로 모두 넣고, 묶음을 받아 전개해 본다. 넣은 항목 수를 돌려준다 */
+async function seedAndExpand(env: TestEnv, r: ReturnType<typeof buildDefaults>, count: number): Promise<{ items: number; anon: Client }> {
+  const names = await seedExamples(env.db, r.examples);
+  expect(names.size).toBe(count);
+  const anon = new Client(env);
+  const list = await anon.get("/api/users/wakaaka/wildcards");
+  expect(list.body.wildcards).toHaveLength(count);
+  let items = 0;
+  for (const [name, id] of names) {
+    const b = await anon.get(`/api/w/${id}/bundle`);
+    expect(b.status, name).toBe(200);
+    items += (Object.values(b.body.docs)[0] as { items: unknown[] }).items.length;
+    for (const seed of ["0", "1", "18446744073709551615"]) {
+      const e = expand(b.body, seed);
+      expect(e.ok && e.text.length > 0, `${name} seed ${seed}`).toBe(true);
+    }
+  }
+  return { items, anon };
+}
+
+describe.skipIf(!existsSync(NEW_CSV))("실제 새 CSV(mengod-hf) 전부를 일반 저장 경로로", () => {
+  let env: TestEnv;
+  beforeEach(async () => {
+    env = await setupEnv();
+  });
+  afterEach(async () => {
+    await env.close();
+  });
+
+  it("408개, 태그 129,631개(일반 21,362개 건너뜀), 모두 저장되고 전개된다", { timeout: 600_000 }, async () => {
+    const r = buildDefaults(readFileSync(NEW_CSV, "utf8"), "LABEL");
+    expect(r.examples.wildcards).toHaveLength(408);
+    expect(r.used).toBe(129_631);
+    expect(r.skippedGeneral).toBe(21_362);
+    const { items } = await seedAndExpand(env, r, 408);
+    expect(items).toBe(129_631);
+  });
+});
+
+describe.skipIf(!existsSync(OLD_CSV))("실제 옛 danbooru-tags.csv 전부를 일반 저장 경로로", () => {
   let env: TestEnv;
   beforeEach(async () => {
     env = await setupEnv();
@@ -97,24 +169,11 @@ describe.skipIf(!existsSync(REAL_CSV))("실제 danbooru-tags.csv 전부를 일�
   });
 
   it("115개, 태그 71,142개, 모두 저장되고 전개된다", { timeout: 300_000 }, async () => {
-    const r = buildDefaults(readFileSync(REAL_CSV, "utf8"), "danbooru-tags.csv");
+    const r = buildDefaults(readFileSync(OLD_CSV, "utf8"), "danbooru-tags.csv");
     expect(r.examples.wildcards).toHaveLength(115);
     expect(r.used).toBe(71_142);
-    const names = await seedExamples(env.db, r.examples);
-    expect(names.size).toBe(115);
-    const anon = new Client(env);
-    const list = await anon.get("/api/users/wakaaka/wildcards");
-    expect(list.body.wildcards).toHaveLength(115);
-    let items = 0;
-    for (const [name, id] of names) {
-      const b = await anon.get(`/api/w/${id}/bundle`);
-      expect(b.status, name).toBe(200);
-      items += (Object.values(b.body.docs)[0] as { items: unknown[] }).items.length;
-      for (const seed of ["0", "1", "18446744073709551615"]) {
-        const e = expand(b.body, seed);
-        expect(e.ok && e.text.length > 0, `${name} seed ${seed}`).toBe(true);
-      }
-    }
+    expect(r.skippedGeneral).toBe(0);
+    const { items, anon } = await seedAndExpand(env, r, 115);
     expect(items).toBe(71_142);
     // 둘러보기에 나오고(원본이므로) 예시 출력이 있다
     const ex = await anon.get("/api/explore?sort=recent&q=%EC%95%84%ED%8B%B0%EC%8A%A4%ED%8A%B8");

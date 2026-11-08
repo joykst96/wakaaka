@@ -52,7 +52,7 @@ export async function importTags(db: Db, x: { fileName: string; bytes: Uint8Arra
         tx,
         chunk.map((r) => ({ ...r, nameKey: nameKey(r.name), koText: koText(r) })),
       );
-      const kws = chunk.flatMap((r) => keywordRows(r).map((k) => ({ tagId: ids.get(r.name)!, ...k })));
+      const kws = chunk.flatMap((r) => keywordRows(r).map((k) => ({ tagId: ids.get(r.name)!, postCount: r.postCount, ...k })));
       stats.keywordRows += kws.length;
       for (let j = 0; j < kws.length; j += BATCH) await repo.insertKeywords(tx, kws.slice(j, j + BATCH));
     }

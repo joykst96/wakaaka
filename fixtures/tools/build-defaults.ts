@@ -43,7 +43,62 @@ const MAJOR: Record<string, number[]> = {
   "효과/연출": [C.camera],
   "색상/패턴": [C.etc],
   메타: [C.etc],
+  // 헤더 없는 형식(mengod-hf)의 대분류. 태그 10개 이상인 쌍에 나오는 65개(NOTES 2026-11-08). 위의 같은 이름은 뜻이 같아 그대로 쓴다
+  작품: [C.char],
+  게임: [C.char],
+  패러디: [C.char],
+  코스프레: [C.char, C.wear],
+  화풍: [C.artist],
+  그림체: [C.artist],
+  스타일: [C.artist],
+  관계: [C.person],
+  외형: [C.body],
+  헤어: [C.body],
+  머리: [C.body],
+  속성: [C.body],
+  "신체 장식": [C.body],
+  표정: [C.face],
+  패션: [C.wear],
+  복장: [C.wear],
+  의류: [C.wear],
+  장신구: [C.wear],
+  장식: [C.wear],
+  행위: [C.pose],
+  포즈: [C.pose],
+  자세: [C.pose],
+  동작: [C.pose],
+  H: [C.pose],
+  성인: [C.pose],
+  성적: [C.pose],
+  "성적 표현": [C.pose],
+  무기: [C.object],
+  음식: [C.object],
+  탈것: [C.object],
+  소품: [C.object],
+  동물: [C.object],
+  식물: [C.object],
+  생물: [C.object],
+  장비: [C.object],
+  오브젝트: [C.object],
+  아이템: [C.object],
+  도구: [C.object],
+  브랜드: [C.object],
+  배경: [C.place],
+  자연: [C.place],
+  장소: [C.place],
+  구도: [C.camera],
+  연출: [C.camera],
+  효과: [C.camera],
+  표현: [C.camera],
+  상황: [C.situation],
+  행사: [C.situation],
+  이벤트: [C.situation],
+  문화: [C.situation],
+  밈: [C.situation],
+  설정: [C.situation],
 };
+/** 헤더 없는 형식에서 일반 태그 쌍을 와일드카드로 만드는 최소 태그 수(DESIGN 10절, 사용자 결정 2026-11-08) */
+export const MIN_GENERAL_GROUP = 10;
 /** 일반이 아닌 Danbooru 분류: 이름, 고정 분류 */
 const CHUNKED: Record<number, { label: string; categories: number[] }> = {
   1: { label: "아티스트", categories: [C.artist] },
@@ -68,6 +123,8 @@ export interface DefaultsResult {
   summary: Array<{ name: string; items: number; bytes: number }>;
   rows: number;
   used: number;
+  /** 헤더 없는 형식에서 쌍이 없거나 태그가 MIN_GENERAL_GROUP개 미만인 쌍이라 넣지 않은 일반 태그 */
+  skippedGeneral: number;
 }
 
 const byPopularity = (a: TagRecord, b: TagRecord) => b.postCount - a.postCount || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
@@ -93,7 +150,8 @@ export function buildDefaults(csvText: string, sourceLabel: string): DefaultsRes
     const s = splitDescription(r.description);
     return hasHangul(s.body) || s.keywords.some(hasHangul);
   };
-  const picked = csv.records.filter((r) => descriptionGroup(r.description) !== null && koDesc(r));
+  // 헤더 없는 형식: 모든 행이 한국어 설명이고 대괄호 표시가 한 단계인 행도 있어, 일반이 아닌 분류는 표시를 보지 않는다
+  const picked = csv.records.filter((r) => (csv.headerless ? hasHangul(r.body) || r.keywords.some(hasHangul) : descriptionGroup(r.description) !== null && koDesc(r)));
   const wildcards: DefaultsResult["examples"]["wildcards"] = [];
   const add = (name: string, description: string, categories: number[], tags: TagRecord[]) => {
     if (NAME_FORBIDDEN.test(name) || [...name].length > 64 || name.trim() !== name) throw new Error(`bad wildcard name: ${name}`);
@@ -103,16 +161,26 @@ export function buildDefaults(csvText: string, sourceLabel: string): DefaultsRes
 
   // 일반 태그: [대분류 > 소분류]마다
   const groups = new Map<string, { major: string; minor: string; tags: TagRecord[] }>();
+  let skippedGeneral = 0;
   for (const r of picked.filter((r) => r.category === 0)) {
-    const g = descriptionGroup(r.description)!;
+    const g = descriptionGroup(r.description);
+    if (g === null) {
+      skippedGeneral++; // 헤더 없는 형식의 한 단계 표시 `[표정]` 등. 헤더 있는 형식은 picked에서 이미 걸렀다
+      continue;
+    }
     const key = `${g.major} > ${g.minor}`;
     if (!groups.has(key)) groups.set(key, { ...g, tags: [] });
     groups.get(key)!.tags.push(r);
   }
   for (const [name, g] of [...groups].sort(([a], [b]) => (a < b ? -1 : 1))) {
+    if (csv.headerless && g.tags.length < MIN_GENERAL_GROUP) {
+      skippedGeneral += g.tags.length;
+      continue;
+    }
     if (g.tags.length > CHUNK) throw new Error(`general subcategory over ${CHUNK}: ${name} (${g.tags.length})`);
     g.tags.sort(byPopularity);
-    add(name, `Danbooru 일반 태그 [${name}] ${g.tags.length.toLocaleString("en-US")}개 중 하나. 한글 설명이 있는 태그만, 모두 같은 확률. 출처 ${sourceLabel}`, MAJOR[g.major] ?? [C.etc], g.tags);
+    const which = csv.headerless ? `한글 설명이 있고 같은 분류가 ${MIN_GENERAL_GROUP}개 이상인 것만` : "한글 설명이 있는 태그만";
+    add(name, `Danbooru 일반 태그 [${name}] ${g.tags.length.toLocaleString("en-US")}개 중 하나. ${which}, 모두 같은 확률. 출처 ${sourceLabel}`, MAJOR[g.major] ?? [C.etc], g.tags);
   }
 
   // 그 밖의 분류: 분류 전체를 post_count 순 5,000개씩
@@ -137,8 +205,14 @@ export function buildDefaults(csvText: string, sourceLabel: string): DefaultsRes
   const big = summary.filter((s) => s.bytes > DOC_BYTES_MAX);
   if (big.length > 0) throw new Error(`documents over 256KB: ${big.map((b) => `${b.name} ${b.bytes}`).join(", ")}`);
   const used = summary.reduce((n, s) => n + s.items, 0);
-  if (used !== picked.length) throw new Error(`lost tags: picked ${picked.length}, placed ${used}`);
-  return { examples: { format: "wakaaka-examples/1", owner: OWNER, wildcards }, summary, rows: csv.records.length, used };
+  if (used + skippedGeneral !== picked.length) throw new Error(`lost tags: picked ${picked.length}, placed ${used}, skipped ${skippedGeneral}`);
+  return { examples: { format: "wakaaka-examples/1", owner: OWNER, wildcards }, summary, rows: csv.records.length, used, skippedGeneral };
+}
+
+/** 출처 표시. 헤더 없는 형식은 mengod-hf 데이터셋(CC BY-SA 4.0)이라 이름과 라이선스를 적는다 */
+export function sourceLabelFor(fileName: string, sha256: string, headerless: boolean): string {
+  const sha = `sha256 ${sha256.slice(0, 12)}`;
+  return headerless ? `Hugging Face mengod-hf/danbooru-tags-kr (${sha}), 한국어 설명 CC BY-SA 4.0` : `${fileName} (${sha})`;
 }
 
 // Node 22에는 import.meta.main이 없다
@@ -150,10 +224,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   }
   const bytes = readFileSync(csvPath);
   const sha = createHash("sha256").update(bytes).digest("hex");
-  const r = buildDefaults(bytes.toString("utf8"), `danbooru-tags.csv (sha256 ${sha.slice(0, 12)})`);
+  const text = bytes.toString("utf8");
+  // 서버에서는 어느 CSV든 /data/danbooru-tags.csv로 놓이므로(deploy/test-tags.sh) 이름 대신 형식으로 출처를 정한다
+  const r = buildDefaults(text, sourceLabelFor("danbooru-tags.csv", sha, readTagCsv(text).headerless));
   const out = outArg ?? new URL("../out/defaults.json", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, JSON.stringify(r.examples));
   const maxBytes = Math.max(...r.summary.map((s) => s.bytes));
-  console.log(`wildcards ${r.summary.length}, tags ${r.used} of ${r.rows} rows, largest doc ${maxBytes} bytes → ${out}`);
+  console.log(`wildcards ${r.summary.length}, tags ${r.used} of ${r.rows} rows (general skipped ${r.skippedGeneral}), largest doc ${maxBytes} bytes → ${out}`);
 }

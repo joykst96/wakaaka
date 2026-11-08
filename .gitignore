@@ -18,3 +18,6 @@ CLAUDE.md
 .claude/
 docs/NOTES.md
 deploy/local.env
+
+# 태그 CSV 같은 큰 데이터 (저장소에 넣지 않는다)
+data/

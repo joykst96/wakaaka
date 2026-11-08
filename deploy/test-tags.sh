@@ -3,6 +3,7 @@
 #   deploy/test-tags.sh            test-up.sh로 한 번 띄운 뒤에 쓴다. test-reset.sh도 끝에서 부른다.
 # 1) 이 PC의 CSV를 ~/docker/wakaaka-test/data/danbooru-tags.csv로 보낸다. 같은 해시가 이미 있으면 건너뛴다.
 #    compose가 data/를 app 컨테이너의 /data에 읽기 전용으로 붙인다.
+#    원본 파일 이름과 상관없이 서버에서는 늘 data/danbooru-tags.csv다(prod-defaults.sh도 이 이름을 읽는다). 형식은 가져오기가 헤더로 가린다.
 # 2) 컨테이너 안에서 import-tags.ts를 돌린다. 데이터 버전이 같으면 가져오기도 건너뛴다.
 # 환경 변수: WAKAAKA_TAGS_CSV(태그 CSV 경로, 읽기만 한다), 나머지는 test-up.sh와 같다.
 set -euo pipefail

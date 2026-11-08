@@ -824,6 +824,11 @@ body,
   padding-left: var(--tree-indent);
   font: var(--font-code);
 }
+.guide-credit {
+  margin: 0;
+  font: var(--font-caption);
+  color: var(--color-fg-muted);
+}
 
 /* ---------------- 900px 아래: 1단 ---------------- */
 @media (max-width: 900px) {

@@ -194,12 +194,25 @@ const m0005: Migration = {
   },
 };
 
+// 한국어 자동완성이 키워드 색인만 읽고 post_count 순으로 고르게 한다(NOTES 2026-11-08 실측: 새 CSV에서 `캐릭터` 266ms → 15ms).
+// post_count는 tag의 값을 그대로 옮긴 것이고 가져오기가 함께 넣는다. 이미 있는 행은 여기서 채운다.
+const m0006: Migration = {
+  async up(db: Kysely<any>) {
+    await db.schema.alterTable("tag_keyword").addColumn("post_count", "integer", (c) => c.notNull().defaultTo(0)).execute();
+    await sql`update tag_keyword k set post_count = t.post_count from tag t where t.id = k.tag_id`.execute(db);
+    await db.schema.alterTable("tag_keyword").alterColumn("post_count", (c) => c.dropDefault()).execute();
+    await db.schema.dropIndex("tag_keyword_key").execute();
+    await sql`create index tag_keyword_key on tag_keyword (key text_pattern_ops, kind, post_count desc, tag_id)`.execute(db);
+  },
+};
+
 export const migrations: Record<string, Migration> = {
   "0001_init": m0001,
   "0002_social": m0002,
   "0003_tags": m0003,
   "0004_admin": m0004,
   "0005_explore_edited_copies": m0005,
+  "0006_tag_keyword_post_count": m0006,
 };
 
 /**

@@ -1,5 +1,7 @@
 // 태그 CSV 읽기 (DESIGN 6절 "태그 가져오기"). DB와 무관한 순수 함수라 단위 테스트로 본다.
-// 열 이름으로 읽는다. 지금 danbooru-tags.csv는 헤더가 4열인데 뒤쪽 행이 이름 없는 다섯째 열(위키 other_names)을 가진다(NOTES Phase 5).
+// 두 형식을 읽는다.
+// - 헤더 있는 형식: 열 이름으로 읽는다. 옛 danbooru-tags.csv는 헤더가 4열인데 뒤쪽 행이 이름 없는 다섯째 열(위키 other_names)을 가진다(NOTES Phase 5).
+// - 헤더 없는 형식(mengod-hf/danbooru-tags-kr): name,category,post_count,description 4열 고정. 이름의 밑줄이 공백으로 적혀 있다(NOTES 2026-11-08).
 
 import { isSafeString } from "@wakaaka/core";
 
@@ -35,8 +37,10 @@ export interface TagRecord {
 }
 
 export interface TagCsv {
-  /** 헤더에 적힌 열 이름 그대로 */
+  /** 헤더에 적힌 열 이름 그대로. 헤더 없는 형식이면 고정 4열 이름 */
   header: string[];
+  /** 첫 행에 name 열이 없어 헤더 없는 형식으로 읽었는지 */
+  headerless: boolean;
   /** 쓰지 않은(모르는) 열 이름 */
   unknownColumns: string[];
   /** 헤더에 other_names가 없고 한 칸 더 있어서 그 칸을 other_names로 읽은 행 수 */
@@ -121,10 +125,33 @@ function splitList(s: string, sep: string): string[] {
   return [...new Set(s.split(sep).map((x) => x.trim()).filter((x) => x !== ""))];
 }
 
+/** 헤더 없는 형식의 고정 열 */
+export const HEADERLESS_COLUMNS = ["name", "category", "post_count", "description"] as const;
+const SINGLE = /^\[([^\]>]+)\]\s*/;
+const GROUP_LABEL = /^<[^<>]*>$/;
+
+/**
+ * 헤더 없는 형식(mengod-hf)의 설명 → 본문과 키워드. splitDescription에 더해 한 단계 표시 `[작가]`를 본문에서 떼고,
+ * 키워드의 묶음 표시 `<교복>`은 꺾쇠만 떼어 키워드로 둔다(school_uniform의 `<교복>`처럼 그 태그의 이름인 경우가 많다. DESIGN 6절).
+ * 헤더 있는 형식은 이 규칙을 쓰지 않는다(옛 CSV를 읽은 결과가 바뀌지 않게).
+ */
+export function splitHeaderlessDescription(description: string): { body: string; keywords: string[] } {
+  const s = splitDescription(description);
+  let body = s.body;
+  if (!DESC.test(description)) {
+    const m = SINGLE.exec(body);
+    if (m) body = body.slice(m[0].length).trim();
+  }
+  const keywords = s.keywords.map((k) => (GROUP_LABEL.test(k) ? k.slice(1, -1).trim() : k)).filter((k) => k !== "");
+  return { body, keywords: [...new Set(keywords)] };
+}
+
 export function readTagCsv(text: string): TagCsv {
   const rows = parseCsv(text);
   const first = rows.next();
   if (first.done) throw new TagCsvError(1, "empty file");
+  const headerless = !first.value.fields.some((h) => h.trim() === "name");
+  if (headerless) return readHeaderless(first.value, rows);
   const header = first.value.fields.map((h) => h.trim());
   const index = new Map<Column, number>();
   const unknownColumns: string[] = [];
@@ -148,19 +175,11 @@ export function readTagCsv(text: string): TagCsv {
       extra = fields[extraIndex]!;
       extraColumnRows++;
     } else if (fields.length !== header.length) throw new TagCsvError(line, `expected ${header.length} fields, got ${fields.length}`);
-    for (const f of fields) {
-      if (!isSafeString(f)) throw new TagCsvError(line, "field contains characters that are not allowed");
-      if (f.length > TEXT_MAX) throw new TagCsvError(line, "field is too long");
-    }
+    checkFields(line, fields);
     const get = (c: Column) => (index.has(c) ? fields[index.get(c)!]! : "");
 
     const name = get("name");
-    if (name === "" || name.length > NAME_MAX || /\s/.test(name)) throw new TagCsvError(line, `bad tag name ${JSON.stringify(name)}`);
-    if (names.has(name)) throw new TagCsvError(line, `duplicate tag name ${name}`);
-    names.add(name);
-    const category = Number(get("category"));
-    if (!/^[0-9]$/.test(get("category")) || !(TAG_CATEGORIES as readonly number[]).includes(category)) throw new TagCsvError(line, `bad category ${get("category")}`);
-    if (!/^[0-9]{1,10}$/.test(get("post_count")) || Number(get("post_count")) > 2 ** 31 - 1) throw new TagCsvError(line, `bad post_count ${get("post_count")}`);
+    const { category, postCount } = checkRow(line, name, get("category"), get("post_count"), names);
 
     const description = get("description");
     const split = splitDescription(description);
@@ -171,7 +190,7 @@ export function readTagCsv(text: string): TagCsv {
     records.push({
       name,
       category,
-      postCount: Number(get("post_count")),
+      postCount,
       description,
       body: split.body,
       keywords,
@@ -180,7 +199,46 @@ export function readTagCsv(text: string): TagCsv {
       minorCategory: minor === "" ? null : minor,
     });
   }
-  return { header, unknownColumns, extraColumnRows, records };
+  return { header, headerless: false, unknownColumns, extraColumnRows, records };
+}
+
+function checkFields(line: number, fields: string[]) {
+  for (const f of fields) {
+    if (!isSafeString(f)) throw new TagCsvError(line, "field contains characters that are not allowed");
+    if (f.length > TEXT_MAX) throw new TagCsvError(line, "field is too long");
+  }
+}
+
+/** 이름·분류·포스트 수 검사와 이름 중복. 두 형식이 같이 쓴다 */
+function checkRow(line: number, name: string, cat: string, pc: string, names: Set<string>): { category: number; postCount: number } {
+  if (name === "" || name.length > NAME_MAX || /\s/.test(name)) throw new TagCsvError(line, `bad tag name ${JSON.stringify(name)}`);
+  if (names.has(name)) throw new TagCsvError(line, `duplicate tag name ${name}`);
+  names.add(name);
+  const category = Number(cat);
+  if (!/^[0-9]$/.test(cat) || !(TAG_CATEGORIES as readonly number[]).includes(category)) throw new TagCsvError(line, `bad category ${cat}`);
+  if (!/^[0-9]{1,10}$/.test(pc) || Number(pc) > 2 ** 31 - 1) throw new TagCsvError(line, `bad post_count ${pc}`);
+  return { category, postCount: Number(pc) };
+}
+
+/**
+ * 헤더 없는 형식(mengod-hf). 4열 고정, 첫 행도 데이터. 이름의 공백은 밑줄로 되돌린다(Danbooru 이름에는 공백이 없다).
+ * 앞뒤 공백이나 겹친 공백은 되돌리면 이상한 이름(`_a`, `a__b`)이 되므로 오류로 멈춘다.
+ */
+function readHeaderless(first: { line: number; fields: string[] }, rest: Iterable<{ line: number; fields: string[] }>): TagCsv {
+  const names = new Set<string>();
+  const records: TagRecord[] = [];
+  for (const { line, fields } of [first, ...rest]) {
+    if (fields.length === 1 && fields[0] === "") continue; // 빈 줄
+    if (fields.length !== HEADERLESS_COLUMNS.length) throw new TagCsvError(line, `expected ${HEADERLESS_COLUMNS.length} fields, got ${fields.length} (no header row, so the fixed columns ${HEADERLESS_COLUMNS.join(",")} are used)`);
+    checkFields(line, fields);
+    const [raw, cat, pc, description] = fields as [string, string, string, string];
+    if (raw !== raw.trim() || / {2}|_/.test(raw)) throw new TagCsvError(line, `bad tag name ${JSON.stringify(raw)} (no header row: names use spaces for underscores)`);
+    const name = raw.replaceAll(" ", "_");
+    const { category, postCount } = checkRow(line, name, cat, pc, names);
+    const split = splitHeaderlessDescription(description);
+    records.push({ name, category, postCount, description, body: split.body, keywords: split.keywords, otherNames: [], majorCategory: null, minorCategory: null });
+  }
+  return { header: [...HEADERLESS_COLUMNS], headerless: true, unknownColumns: [], extraColumnRows: 0, records };
 }
 
 const HANGUL = /[ᄀ-ᇿ㄰-㆏가-힣]/;
