@@ -42,7 +42,8 @@
   --wk-sidebar-item-bg-hover: var(--color-bg-muted);
   --wk-sidebar-item-bg-current: var(--color-bg-selected);
   --wk-preview-width: var(--size-sidebar);
-  --wk-desc-min-height: var(--space-16);
+  /* 설명칸이 쓴 만큼 늘어나는 상한(넘으면 스크롤) */
+  --wk-desc-max-height: calc(var(--space-16) * 3);
   /* 이름 칸이 이보다 좁아지면 상태·버튼이 다음 줄로 간다 */
   --wk-name-basis: calc(var(--space-16) * 3);
   --wk-drawer-shadow: var(--shadow-lg);
@@ -115,8 +116,14 @@
   --item-row-bg-error: var(--color-danger-subtle);
   --item-handle-fg: var(--color-fg-subtle);
   --item-weight-width: var(--space-12);
+  /* 주석 행의 가중치 칸(막힘) */
+  --item-weight-comment-bg: var(--color-bg-disabled);
+  --item-weight-comment-fg: var(--color-fg-subtle);
   --item-static-padding: var(--space-1_5) var(--space-2);
   --item-static-min-height: var(--space-8);
+  /* 빈 목록의 "첫 항목 입력" 자리(점선) */
+  --item-empty-padding: var(--item-static-padding);
+  --item-empty-border: var(--color-border-strong);
 
   /* 선택지 가중치 패널 (항목 행 아래) */
   --choice-weights-indent: var(--space-8);
@@ -150,6 +157,24 @@
   --guide-width: var(--size-container-sm);
   --guide-output-bg: var(--color-bg-sunken);
   --guide-output-padding: var(--space-2) var(--space-2_5);
+
+  /* ---------------- 토스트 (오른쪽 아래 알림) ---------------- */
+  --toast-z: var(--z-toast);
+  --toast-offset: var(--inset-md);
+  --toast-gap: var(--gap-sm);
+  --toast-max-width: var(--size-dialog);
+  --toast-padding: var(--inset-xs) var(--inset-xs) var(--inset-xs) var(--inset-md);
+  --toast-bg: var(--color-bg-surface);
+  --toast-fg: var(--color-fg);
+  --toast-border: var(--color-border-strong);
+  --toast-accent-width: var(--border-width-ring);
+  --toast-radius: var(--radius-md);
+  --toast-shadow: var(--shadow-lg);
+  --toast-enter-shift: var(--space-2);
+  --toast-info: var(--color-accent);
+  --toast-success: var(--color-success);
+  --toast-warning: var(--color-warning);
+  --toast-error: var(--color-danger);
 
   /* ---------------- 상태 띠 ---------------- */
   --banner-padding: var(--inset-sm) var(--inset-md);

@@ -5,6 +5,7 @@
 import { toImpactPrompt, type ImpactWarning, type ImpactWarningCode } from "@wakaaka/core";
 import { useState } from "react";
 import { getMeta } from "../app/cache.ts";
+import { useToast } from "../components/Toast.tsx";
 import { loadFlag, saveFlag } from "../lib/drafts.ts";
 import type { EditItem } from "../lib/editdoc.ts";
 import type { BundleLike } from "../lib/preview.ts";
@@ -33,7 +34,8 @@ export interface ExportPanelProps {
 
 export function ExportPanel({ bundle, blocked, items, selfId, selfName }: ExportPanelProps) {
   const [format, setFormat] = useState<Format>(() => (loadFlag("export-wakaaka") ? "wakaaka" : "impact"));
-  const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  // 복사 결과는 토스트로 알린다. 변환 경고 목록은 읽고 고칠 수 있게 패널에 남긴다(사용자 결정 2026-11-09)
+  const toast = useToast();
   const [warnings, setWarnings] = useState<ImpactWarning[]>([]);
 
   const where = (w: ImpactWarning) => {
@@ -43,22 +45,26 @@ export function ExportPanel({ bundle, blocked, items, selfId, selfName }: Export
 
   const copy = async () => {
     setWarnings([]);
+    const fail = (text: string) => toast({ kind: "error", text });
     let text: string;
+    let found: ImpactWarning[] = [];
     if (format === "wakaaka") {
       text = itemsToExportText(items); // 주석 항목은 빼고 내보낸다(DESIGN 3절 "주석 항목")
     } else {
-      if (blocked) return setStatus({ ok: false, text: blocked });
-      if (!bundle) return setStatus({ ok: false, text: "아직 불러오는 중입니다" });
+      if (blocked) return fail(blocked);
+      if (!bundle) return fail("아직 불러오는 중입니다");
       const r = toImpactPrompt(bundle, selfId ? { rootWildcard: selfId } : {});
-      if (!r.ok) return setStatus({ ok: false, text: `변환할 수 없습니다 (${r.error.code})` });
+      if (!r.ok) return fail(`변환할 수 없습니다 (${r.error.code})`);
       text = r.text;
-      setWarnings(r.warnings);
+      found = r.warnings;
+      setWarnings(found);
     }
     try {
       await navigator.clipboard.writeText(text);
-      setStatus({ ok: true, text: `${format === "impact" ? "Impact Pack 프롬프트" : "텍스트 보기"}를 복사했습니다 (${text.length.toLocaleString("ko-KR")}자)` });
+      const done = `${format === "impact" ? "Impact Pack 프롬프트" : "텍스트 보기"}를 복사했습니다 (${text.length.toLocaleString("ko-KR")}자)`;
+      toast(found.length > 0 ? { kind: "warning", text: `${done}. 변환 경고 ${found.length}개는 내보내기 패널에 있습니다` } : { kind: "success", text: done });
     } catch {
-      setStatus({ ok: false, text: "클립보드에 쓸 수 없습니다(브라우저가 막음)" });
+      fail("클립보드에 쓸 수 없습니다(브라우저가 막음)");
     }
   };
 
@@ -74,7 +80,6 @@ export function ExportPanel({ bundle, blocked, items, selfId, selfName }: Export
             const f = e.target.value as Format;
             setFormat(f);
             saveFlag("export-wakaaka", f === "wakaaka");
-            setStatus(null);
             setWarnings([]);
           }}
         >
@@ -90,11 +95,6 @@ export function ExportPanel({ bundle, blocked, items, selfId, selfName }: Export
           ? "Impact Pack 와일드카드 노드의 텍스트 칸에 붙여 넣습니다. 하위 와일드카드를 모두 펼친 한 줄이고, 뽑힐 확률은 같지만 seed가 같아도 결과는 다릅니다."
           : "텍스트 보기 형식(한 줄에 항목 하나, 3* 가중치)입니다. 다른 와일드카드의 텍스트 보기에 붙여 넣을 수 있습니다. # 주석 줄은 빠집니다."}
       </p>
-      {status && (
-        <p className={status.ok ? "text-success" : "text-danger"} role="status">
-          {status.text}
-        </p>
-      )}
       {warnings.length > 0 && (
         <ul className="export-warnings" aria-label="변환 경고">
           {warnings.map((w, i) => (

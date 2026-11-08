@@ -92,11 +92,13 @@ export function ItemList({ items, onChange, context, lint, readOnly, highlight, 
                 ⋮⋮
               </span>
             )}
+            {/* 주석 행은 가중치 칸을 막는다. 값은 지우지 않는다(맨 앞 #를 지우면 그 값이 다시 쓰인다) */}
             <WeightInput
               value={it.w}
-              disabled={readOnly || (isRef && it.spread === true)}
+              disabled={readOnly || (isRef && it.spread === true) || isNote}
+              placeholder={isNote ? "#" : "1"}
               onChange={(w) => update(it.id, { w })}
-              title={isRef && it.spread ? "펼친 항목은 각자의 가중치를 쓴다" : isNote ? "주석 항목은 뽑히지 않아 가중치를 쓰지 않는다" : "가중치 (비우면 1)"}
+              title={isRef && it.spread ? "펼친 항목은 각자의 가중치를 쓴다" : isNote ? "주석 항목은 뽑히지 않아 가중치를 쓰지 않는다(맨 앞 #를 지우면 다시 쓴다)" : "가중치 (비우면 1)"}
             />
             <div className="item-text">
               {isRef ? (
@@ -207,7 +209,13 @@ export function ItemList({ items, onChange, context, lint, readOnly, highlight, 
           </Fragment>
         );
       })}
-      {!readOnly && (
+      {!readOnly && items.length === 0 && (
+        // 빈 목록: 첫 항목을 쓸 자리를 보인다(설명칸을 항목 입력칸으로 아는 일이 있었다, 사용자 요청 2026-11-09)
+        <button type="button" className="item-empty" onClick={() => insertAfter(null, [""])}>
+          여기를 눌러 첫 항목을 입력하세요
+        </button>
+      )}
+      {!readOnly && items.length > 0 && (
         <div className="item-add">
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => insertAfter(null, [""])}>
             + 항목
@@ -228,7 +236,7 @@ function clean(it: EditItem): EditItem {
   return out;
 }
 
-function WeightInput({ value, onChange, disabled, title }: { value: number | undefined; onChange(w: number | undefined): void; disabled?: boolean; title: string }) {
+function WeightInput({ value, onChange, disabled, placeholder, title }: { value: number | undefined; onChange(w: number | undefined): void; disabled?: boolean; placeholder: string; title: string }) {
   const [draft, setDraft] = useState<string | null>(null);
   const shown = draft ?? (value === undefined ? "" : String(value));
   const bad = draft !== null && draft !== "" && !(/^[0-9]{1,7}$/.test(draft) && Number(draft) <= MAX_WEIGHT);
@@ -236,7 +244,7 @@ function WeightInput({ value, onChange, disabled, title }: { value: number | und
     <input
       className={"input input-sm item-weight" + (bad ? " is-invalid" : "")}
       inputMode="numeric"
-      placeholder="1"
+      placeholder={placeholder}
       value={shown}
       disabled={disabled}
       title={bad ? `0~${MAX_WEIGHT} 정수` : title}
