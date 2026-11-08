@@ -1,0 +1,35 @@
+{
+  "name": "comment-in-spread-target",
+  "about": "펼친 대상의 주석 항목도 후보가 아니다. 결과는 대상에서 주석을 뺀 것과 같다.",
+  "covers": ["comment", "spread", "weights"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WhairColor00": "hairColorV04"},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "items": [{"id": "i001", "text": "bald"}, {"id": "i002", "ref": {"wildcard": "WhairColor00"}, "spread": true}]
+      },
+      "hairColorV04": {
+        "schema": 1,
+        "items": [
+          {"id": "c000", "text": "# 밝은 색", "w": 1000000},
+          {"id": "c001", "text": "red"},
+          {"id": "c002", "text": "#blue", "w": 2},
+          {"id": "c003", "text": "silver", "w": 3}
+        ]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "bald"},
+    {"seed": "1", "text": "silver"},
+    {"seed": "2", "text": "bald"},
+    {"seed": "3", "text": "silver"},
+    {"seed": "4", "text": "red"},
+    {"seed": "5", "text": "red"},
+    {"seed": "6", "text": "silver"},
+    {"seed": "7", "text": "red"}
+  ]
+}

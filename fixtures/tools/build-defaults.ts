@@ -6,7 +6,7 @@
 // - 대상: 맨 앞이 [대분류 > 소분류]이고 그 표시를 뺀 본문이나 키워드에 한글이 있는 행. 표시 자체가 한글이라 설명 전체로 보면 안 된다.
 //   NSFW를 거르지 않는다(테스트 예시와 다름).
 // - Danbooru 일반(general) 태그는 [대분류 > 소분류]마다 하나. 아티스트·캐릭터·작품·메타는 분류 전체를 post_count 내림차순 5,000개씩.
-// - 항목은 태그 하나씩, 가중치는 모두 1(w를 적지 않음), 개수 1~1. 텍스트는 자동완성과 같은 표기.
+// - 항목은 태그 하나씩, 가중치는 모두 1(w를 적지 않음), 개수 1~1. 텍스트는 자동완성과 같은 표기(항목 맨 앞이라 #로 시작하는 태그는 #, 2026-11-08).
 // - CSV 읽기는 태그 가져오기와 같은 코드(apps/api tagcsv.ts)를 쓴다. 같은 파일을 같게 읽게.
 // - 와일드카드 ID(파일 안에서만 쓰는 임시 ID)와 항목 ID는 이름의 해시라 다시 만들어도 같다. 서버는 와일드카드 ID를 새로 준다.
 import { createHash } from "node:crypto";
@@ -140,7 +140,8 @@ function items(tags: TagRecord[]) {
     }
     if (used.has(id)) throw new Error(`item id collision: ${t.name}`);
     used.add(id);
-    return { id, text: escapeText(promptTag(t.name)) };
+    // 항목 텍스트 전체가 태그라 맨 앞 자리다: #compass 같은 태그는 #로(주석이 되지 않게, SPEC 2.7)
+    return { id, text: escapeText(promptTag(t.name), false, true) };
   });
 }
 

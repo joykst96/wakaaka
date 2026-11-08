@@ -60,6 +60,8 @@ const mat = (file: string) => {
 
 // 프롬프트 표기(밑줄, 괄호)와 문법 이스케이프는 편집기 자동완성과 같은 core 함수를 쓴다(DESIGN 11절, 잠정).
 const tag = (name: string, inChoice = false) => escapeText(promptTag(name), inChoice);
+/** 항목 텍스트 전체가 태그 하나일 때(맨 앞 자리, SPEC 2.7) */
+const itemTag = (name: string) => escapeText(promptTag(name), false, true);
 
 // ---------------------------------------------------------------- ID
 
@@ -98,7 +100,7 @@ function weights(list: Mat[]): (m: Mat) => number | undefined {
 function atom(name: string, files: string[], categories: number[], description: string, opts: Partial<WcDef> = {}) {
   const list = files.flatMap(mat);
   const wf = weights(list);
-  def({ name, description, categories, ...opts, items: list.map((m) => ({ key: m.name, text: tag(m.name), w: wf(m) })) });
+  def({ name, description, categories, ...opts, items: list.map((m) => ({ key: m.name, text: itemTag(m.name), w: wf(m) })) });
 }
 
 const ref = (name: string, w?: number): ItemDef => ({ key: "ref:" + name, ref: name, w });
@@ -152,12 +154,12 @@ const quality = mat("quality_manual");
 def({
   name: "quality", description: "품질 태그 전부(뽑힌 순서로 섞임)", categories: [C.preset], count: [5, 5],
   items: [...quality.filter((m) => m.group === "positive").slice(0, 4), ...mat("meta_quality").filter((m) => m.name === "absurdres")]
-    .map((m) => text(m.name, tag(m.name))),
+    .map((m) => text(m.name, itemTag(m.name))),
 });
 def({
   name: "negative", description: "네거티브 품질 태그 전부", categories: [C.preset], count: [6, 6],
   items: [...quality.filter((m) => m.group === "negative"), ...mat("meta_quality").filter((m) => ["lowres", "jpeg_artifacts"].includes(m.name))]
-    .map((m) => text(m.name, tag(m.name))),
+    .map((m) => text(m.name, itemTag(m.name))),
 });
 def({
   name: "girl base", description: "여자 캐릭터 외형", categories: [C.person, C.body],
@@ -181,7 +183,7 @@ const chars = mat("character").slice(0, 15);
 const cw = weights(chars);
 def({
   name: "character pool", description: "캐릭터 세트 셋과 인기 캐릭터 15명", categories: [C.char],
-  items: [ref("miku set", 4), ref("reimu set", 4), ref("kaga set", 2), ...chars.map((m) => text(m.name, tag(m.name), cw(m)))],
+  items: [ref("miku set", 4), ref("reimu set", 4), ref("kaga set", 2), ...chars.map((m) => text(m.name, itemTag(m.name), cw(m)))],
 });
 def({ name: "subject", description: "오리지널 여자 캐릭터 또는 캐릭터 풀", categories: [C.preset], items: [ref("girl base", 3), ref("character pool", 2)] });
 
@@ -189,7 +191,7 @@ const special = mat("special");
 def({
   name: "emoticon test", description: "특수문자(| \\ 괄호)와 짧은 이모티콘 태그. 이스케이프 검사용", categories: [C.etc], count: [1, 3],
   items: [
-    ...special.map((m) => text(m.name, tag(m.name))),
+    ...special.map((m) => text(m.name, itemTag(m.name))),
     text("choice-with-pipes", `{${tag("\\||/", true)}|${tag("<|>_<|>", true)}|${tag(":|", true)}}`, 3),
   ],
 });

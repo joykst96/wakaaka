@@ -42,8 +42,11 @@ export function tagFragmentBefore(before: string): { from: number; query: string
   return { from, query, inChoice: depth > 0 };
 }
 
-/** 자동완성이 넣는 글자: 확정 규칙(DESIGN 11절)대로 바꾸고 와카아카 이스케이프. 뒤에 쉼표를 붙이지 않는다 */
-export const tagInsertText = (name: string, inChoice: boolean) => escapeText(promptTag(name), inChoice);
+/**
+ * 자동완성이 넣는 글자: 확정 규칙(DESIGN 11절)대로 바꾸고 와카아카 이스케이프. 뒤에 쉼표를 붙이지 않는다.
+ * atStart: 항목 텍스트 맨 앞에 넣는다. #로 시작하는 태그(#compass)가 주석이 되지 않게 \#로 넣는다(SPEC 2.7)
+ */
+export const tagInsertText = (name: string, inChoice: boolean, atStart = false) => escapeText(promptTag(name), inChoice, atStart);
 
 /** 목록에 보이는 이름: 밑줄 규칙만(괄호 이스케이프 없이) */
 export const tagDisplayName = (name: string) => promptTag(name).replaceAll("\\(", "(").replaceAll("\\)", ")");
@@ -129,7 +132,7 @@ export function tagLint(text: string, tags: TagLookup): Array<Diagnostic & { fix
     const info = tags.get(name);
     if (info === undefined) asked.push(name);
     if (!info) continue;
-    const expected = tagInsertText(name, p.inChoice);
+    const expected = tagInsertText(name, p.inChoice, p.from === 0);
     if (expected === p.text) continue;
     const reasons: string[] = [];
     if (/_/.test(p.text) && !/_/.test(expected)) reasons.push("밑줄 표기입니다");

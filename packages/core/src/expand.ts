@@ -1,7 +1,7 @@
 // 전개기 (SPEC 4~6절). 묶음 + seed → 문자열과 출처 범위, 또는 오류 코드 하나.
 
 import { cleanupWithMap } from "./cleanup.ts";
-import { collectRefs, parse, type Node, type ParseError, type SyntaxErrorCode } from "./parser.ts";
+import { collectRefs, isCommentItem, parse, type Node, type ParseError, type SyntaxErrorCode } from "./parser.ts";
 import { bounded, derive, sampleWithoutReplacement, SplitMix64 } from "./random.ts";
 import { expandDocSchema } from "./schema.ts";
 
@@ -254,7 +254,8 @@ function prepareDoc(hash: string, raw: unknown, resolve: (wildcard: string, hash
   if (!r.success) throw new Fail({ code: "E_DOC", hash });
   const d = r.data;
   const edges = new Set<string>();
-  const items: Item[] = d.items.map((it): Item => {
+  // SPEC 2.7: 주석 항목은 스키마만 보고(위 safeParse) 문서에 없는 것처럼 뺀다. 문법·참조·간선·후보 어디에도 들지 않는다
+  const items: Item[] = d.items.filter((it) => !isCommentItem(it)).map((it): Item => {
     const w = BigInt(it.w ?? 1);
     if (it.ref !== undefined) {
       const target = resolve(it.ref.wildcard, hash, it.id);

@@ -1,0 +1,34 @@
+{
+  "name": "comment-only-doc",
+  "about": "주석 항목만 있는 문서는 후보가 없어 빈 문자열이다(항목이 없는 문서와 같다, 07). 펼쳐도 아무것도 더하지 않는다.",
+  "covers": ["comment", "empty", "spread", "cleanup"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"WonlyNotes00": "onlyNotes000"},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "select": {"count": [2, 2], "sep": " | "},
+        "items": [
+          {"id": "i001", "text": "a, ${w:WonlyNotes00}, b"},
+          {"id": "i002", "ref": {"wildcard": "WonlyNotes00"}, "spread": true},
+          {"id": "i003", "text": "c"}
+        ]
+      },
+      "onlyNotes000": {
+        "schema": 1,
+        "select": {"count": [1, 3]},
+        "items": [{"id": "n001", "text": "# 아직 비어 있음"}, {"id": "n002", "text": "#todo: ${w:WonlyNotes00}"}]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "a, b | c"},
+    {"seed": "1", "text": "c | a, b"},
+    {"seed": "2", "text": "a, b | c"},
+    {"seed": "3", "text": "a, b | c"},
+    {"seed": "4", "text": "a, b | c"},
+    {"seed": "5", "text": "c | a, b"}
+  ]
+}

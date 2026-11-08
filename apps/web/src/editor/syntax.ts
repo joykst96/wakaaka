@@ -1,12 +1,14 @@
 // 편집기 구문 표시와 오류 밑줄. CodeMirror 칸과 정적 칸(포커스 없는 항목)이 같이 쓴다.
 // 색칠용 토큰은 SPEC 2.2 읽는 순서를 그대로 따라 훑는다. 오류는 core parse가 기준이다(파서 위치, UTF-16).
 
-import { classifyRefBody, parse, type Node } from "@wakaaka/core";
+import { classifyRefBody, isComment, parse, type Node } from "@wakaaka/core";
 
 /** 바깥 프롬프트 표기: 와카아카 문법이 아니라 그대로 ComfyUI·NAI로 넘어가는 것. 색만 달리하고 뜻은 바꾸지 않는다 */
 export type ForeignKind = "comfy" | "lora" | "nai" | "break";
 
 export type Token =
+  /** 주석 항목(SPEC 2.7): 텍스트 첫 글자가 #. 텍스트 전체 하나이고 다른 토큰은 없다 */
+  | { type: "comment"; from: number; to: number }
   | { type: "escape"; from: number; to: number }
   /** depth: 그 괄호·세로선이 속한 선택지가 몇 겹째인지(1부터). 짝이 맞는 괄호는 같은 depth다 */
   | { type: "brace"; from: number; to: number; depth: number }
@@ -22,10 +24,17 @@ const ALT_WEIGHT = /[0-9.]+[*]/y;
 
 /** 색칠용 토큰(위치순). 오류가 있어도 끝까지 훑는다(닫히지 않은 참조는 끝까지 badref) */
 export function tokenize(text: string): Token[] {
+  if (isComment(text)) return [{ type: "comment", from: 0, to: text.length }];
   const out: Token[] = [];
   let depth = 0;
   let altStart = false;
-  for (let i = 0; i < text.length; ) {
+  let i = 0;
+  // 맨 앞의 \#은 글자 # (SPEC 2.2)
+  if (text.startsWith("\\#")) {
+    out.push({ type: "escape", from: 0, to: 2 });
+    i = 2;
+  }
+  for (; i < text.length; ) {
     if (altStart) {
       altStart = false;
       ALT_WEIGHT.lastIndex = i;
@@ -184,6 +193,8 @@ export function choiceHints(text: string, nodes: readonly Node[]): Diagnostic[] 
 /** 항목 텍스트 하나의 진단: 문법 오류(파서 위치), 없는 참조, 저장할 때 고를 이름 참조 */
 export function diagnose(text: string, ctx: LintContext): Diagnostic[] {
   const p = parse(text, "edit");
+  // 주석 항목(SPEC 2.7)은 문법·참조·태그 표기를 보지 않는다
+  if (p.ok && p.comment) return [];
   if (!p.ok) {
     const { code, start, end } = p.error;
     return [{ from: start, to: Math.max(end, start + 1), severity: "error", message: syntaxMessage(code) }];

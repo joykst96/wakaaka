@@ -3,7 +3,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { expand } from "@wakaaka/core";
+import { expand, isComment } from "@wakaaka/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildDefaults, sourceLabelFor } from "../../../fixtures/tools/build-defaults.ts";
 import { seedExamples } from "../src/services/seed.ts";
@@ -38,6 +38,7 @@ describe("묶는 규칙 (합성 CSV)", () => {
     ["^_^", 0, 10, "[표정/감정 > 웃음] 웃는 얼굴"],
     ["{brace}|pipe", 0, 5, "[사물 > 기타 사물] 특수문자 시험"],
     ["kantai_collection", 3, 300, "[작품/출처 > 게임] 칸코레"],
+    ["#compass", 3, 250, "[작품/출처 > 게임] 컴파스"], // 항목 맨 앞의 #는 주석이라 \#로 (SPEC 2.7)
     ...artists,
   ];
   const r = buildDefaults(csv(rows), "test.csv");
@@ -71,7 +72,7 @@ describe("묶는 규칙 (합성 CSV)", () => {
     expect(m.get("아티스트 3")!.doc.description).toMatch(/12,001개 중 post_count 순 10,001~12,001번째/);
     // 캐릭터는 보컬로이드·애니가 한 와일드카드에(소분류 무시), post_count 순
     expect(m.get("캐릭터 1")!.doc.items.map((i) => i.text)).toEqual(["ayanami rei", "hatsune miku"]);
-    expect(m.get("작품/출처 1")!.doc.items.map((i) => i.text)).toEqual(["kantai collection"]);
+    expect(m.get("작품/출처 1")!.doc.items.map((i) => i.text)).toEqual(["kantai collection", "\\#compass"]);
     expect(m.get("메타 1")!.categories).toEqual([13]);
     expect([...m.keys()].some((n) => n.startsWith("캐릭터 >"))).toBe(false);
   });
@@ -80,6 +81,8 @@ describe("묶는 규칙 (합성 CSV)", () => {
     const texts = [...m.values()].flatMap((w) => w.doc.items.map((i) => i.text));
     expect(texts).toContain("^_^");
     expect(texts).toContain("\\{brace\\}|pipe"); // 선택지 밖이라 |는 그대로
+    expect(texts).toContain("\\#compass"); // 항목 맨 앞이라 주석이 되지 않게
+    expect(texts.some((t) => t !== undefined && isComment(t))).toBe(false);
   });
 
   it("다시 만들면 같다(ID 포함)", () => {
@@ -131,7 +134,10 @@ async function seedAndExpand(env: TestEnv, r: ReturnType<typeof buildDefaults>, 
   for (const [name, id] of names) {
     const b = await anon.get(`/api/w/${id}/bundle`);
     expect(b.status, name).toBe(200);
-    items += (Object.values(b.body.docs)[0] as { items: unknown[] }).items.length;
+    const docItems = (Object.values(b.body.docs)[0] as { items: Array<{ text?: string }> }).items;
+    items += docItems.length;
+    // 기본 와일드카드에는 주석 항목이 없다(#로 시작하는 태그는 \#로 넣는다, SPEC 2.7)
+    expect(docItems.filter((i) => i.text !== undefined && isComment(i.text)), name).toEqual([]);
     for (const seed of ["0", "1", "18446744073709551615"]) {
       const e = expand(b.body, seed);
       expect(e.ok && e.text.length > 0, `${name} seed ${seed}`).toBe(true);

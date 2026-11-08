@@ -26,6 +26,7 @@ export const wakaakaTheme = EditorView.theme({
   ".wk-foreign": { color: "var(--editor-foreign)" },
   ".wk-weight": { color: "var(--editor-weight)" },
   ".wk-escape": { color: "var(--editor-escape)" },
+  ".wk-comment": { color: "var(--editor-comment)", fontStyle: "var(--editor-comment-font-style)" },
   ".wk-nameref": { color: "var(--editor-name-ref)" },
 
   // 참조 칩

@@ -392,6 +392,10 @@ body,
 .item-row.is-error {
   background: var(--item-row-bg-error);
 }
+/* 주석 항목: 가중치를 쓰지 않으므로 흐리게 */
+.item-row.is-comment .item-weight {
+  color: var(--color-fg-subtle);
+}
 .item-handle {
   align-self: center;
   color: var(--item-handle-fg);
@@ -521,6 +525,10 @@ body,
 }
 .syn-escape {
   color: var(--editor-escape);
+}
+.syn-comment {
+  color: var(--editor-comment);
+  font-style: var(--editor-comment-font-style);
 }
 .syn-nameref {
   color: var(--editor-name-ref);

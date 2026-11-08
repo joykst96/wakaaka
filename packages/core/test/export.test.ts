@@ -48,6 +48,21 @@ describe("변환 모양", () => {
   test("NAI 강조로 시작하는 보기도 앞에 가중치가 붙어 Impact가 떼지 않는다", () => {
     expect(text(bundle([{ id: "a", text: "2::red hair::" }, { id: "b", text: "{1.2::wlop ::|x}" }])).text).toBe("{1::2::red hair::|1::{1::1.2::wlop ::|1::x}}");
   });
+  test("주석 항목(SPEC 2.7)은 빼고, 맨 앞 \\#은 글자 #. 주석만 있는 와일드카드는 빈 글자", () => {
+    const b = bundle(
+      [
+        { id: "a", text: "# 메모 {깨진 ${w:ZZZZZZZZZZZZ}" },
+        { id: "b", text: "\\#compass", w: 2 },
+        { id: "c", text: "x ${w:XXXXXXXXXXXX} #y" },
+        { id: "d", ref: { wildcard: "XXXXXXXXXXXX" }, spread: true },
+      ],
+      {},
+      { xdoc00000001: { schema: 1, items: [{ id: "n", text: "#only notes" }] } },
+      { XXXXXXXXXXXX: "xdoc00000001" },
+    );
+    expect(text(b).text).toBe("{2::#compass|1::x  #y}");
+    expect(text(bundle([{ id: "a", text: "#a" }, { id: "b", text: "#b", w: 0 }])).text).toBe("");
+  });
   test("$ 하나와 와카아카 이스케이프는 글자로 풀린다", () => {
     expect(text(bundle([{ id: "a", text: "100\\$, \\\\m/, hatsune miku \\(cosplay\\)" }])).text).toBe("{1::100$, \\m/, hatsune miku \\(cosplay\\)}");
   });

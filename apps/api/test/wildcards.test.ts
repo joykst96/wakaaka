@@ -244,6 +244,60 @@ describe("저장 검증", () => {
   });
 });
 
+describe("주석 항목 (SPEC 2.7)", () => {
+  it("주석 안의 깨진 문법·남의 참조·이름 참조·자기 참조는 검사하지 않고, 참조로 치지 않으며, 결과에 나오지 않는다", async () => {
+    const bob = await new Client(env).signup("bob");
+    const bobs = await bob.create(doc("bob's", [{ id: "a", text: "b" }]));
+    const leaf = await alice.create(doc("leaf", [{ id: "l", text: "leaf" }]));
+    const d = doc("noted", [
+      { id: "c1", text: `# 메모 {깨진 ${W(bobs)} \${hair} ${W("ZZZZZZZZZZZZ")}`, w: 9 },
+      { id: "c2", text: `#${W(leaf)}` },
+      { id: "a", text: "red hair" },
+      { id: "b", text: "\\#compass" },
+    ]);
+    const r = await alice.post("/api/wildcards", { doc: d });
+    expect(r.status).toBe(201);
+    expect(r.body.hash).toBe(contentHash(d)); // 주석도 내용이라 해시에 들어간다
+    // 자기 자신을 가리키는 주석도 순환이 아니다
+    const self = await alice.put(`/api/wildcards/${r.body.id}`, { doc: doc("noted", [...d.items, { id: "c3", text: `# ${W(r.body.id)}` }]) });
+    expect(self.status).toBe(200);
+    // 주석 안의 참조는 의존이 아니다: leaf를 지울 수 있다
+    expect((await alice.get(`/api/wildcards/${leaf}/dependents`)).body.dependents).toEqual([]);
+    expect((await alice.del(`/api/wildcards/${leaf}`)).status).toBe(200);
+    const seen = new Set<string>();
+    for (let s = 0; s < 40; s++) seen.add((await alice.get(`/api/w/${r.body.id}/resolve?seed=${s}`)).body.text);
+    expect([...seen].sort()).toEqual(["#compass", "red hair"]);
+  });
+
+  it("가중치 합 0은 주석을 빼고 본다, 주석만 있는 문서는 빈 와일드카드처럼 받는다", async () => {
+    const zero = await alice.post("/api/wildcards", { doc: doc("z", [{ id: "c", text: "# 설명" }, { id: "a", text: "x", w: 0 }]) });
+    expect(zero.body.error.code).toBe("E_WEIGHT_ZERO");
+    const only = await alice.post("/api/wildcards", { doc: doc("notes", [{ id: "c", text: "# 아직 비어 있음", w: 0 }]) });
+    expect(only.status).toBe(201);
+    expect((await alice.get(`/api/w/${only.body.id}/resolve?seed=1`)).body.text).toBe("");
+    // spread 대상의 주석도 후보가 아니다
+    const inner = await alice.create(doc("inner", [{ id: "c", text: "# x" }, { id: "i", text: "x" }]));
+    const outer = await alice.create(doc("outer", [{ id: "s", ref: { wildcard: inner }, spread: true }, { id: "o", text: "z", w: 0 }]));
+    const r = await alice.put(`/api/wildcards/${inner}`, { doc: doc("inner", [{ id: "c", text: "# x" }]) });
+    expect(r.status).toBe(200);
+    expect(r.body.warnings).toEqual([{ code: "W_WEIGHT_ZERO", wildcard: outer }]);
+  });
+
+  it("가져오기: 주석은 그대로 복사하고(참조 ID를 바꾸지 않음) 결과가 원본과 같다", async () => {
+    const leaf = await alice.create(doc("leaf", [{ id: "l", text: "leaf" }]));
+    const root = await alice.create(doc("root", [{ id: "c", text: `# 원래 ${W(leaf)} {깨진` }, { id: "a", text: `x ${W(leaf)}` }]));
+    const bob = await new Client(env).signup("bob");
+    const r = await bob.post(`/api/wildcards/${root}/import`);
+    expect(r.status).toBe(201);
+    const copy = (await bob.get(`/api/wildcards/${r.body.root}`)).body.doc;
+    expect(copy.items[0].text).toBe(`# 원래 ${W(leaf)} {깨진`);
+    expect(copy.items[1].text).not.toContain(leaf);
+    for (let s = 0; s < 5; s++) {
+      expect((await bob.get(`/api/w/${r.body.root}/resolve?seed=${s}`)).body.text).toBe((await alice.get(`/api/w/${root}/resolve?seed=${s}`)).body.text);
+    }
+  });
+});
+
 describe("dependents와 삭제", () => {
   it("dependents는 최신 버전 기준 직접·간접 참조와 거리", async () => {
     const a = await alice.create(doc("A", [{ id: "a", text: "x" }]));

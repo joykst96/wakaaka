@@ -97,6 +97,7 @@ export function StaticText({ text, lint, placeholder }: { text: string; lint?: L
     if (t.type === "wref") out.push(<RefChip key={out.length} id={t.id} />);
     else if (t.type === "nameref") out.push(<span key={out.length} className={"syn-nameref" + (d ? ` lint-${d.severity}` : "")} title={d?.message}>{s}</span>);
     else if (t.type === "escape") out.push(<span key={out.length} className="syn-escape">{s}</span>);
+    else if (t.type === "comment") out.push(<span key={out.length} className="syn-comment" title="주석: 결과에 나오지 않는다">{s}</span>);
     else if (t.type === "foreign") out.push(<span key={out.length} className="syn-foreign" title={FOREIGN_TITLE[t.kind]}>{s}</span>);
     else if (t.type === "badref") out.push(<span key={out.length} className="lint-error" title={d?.message}>{s}</span>);
     else if (t.type === "weight") out.push(<span key={out.length} className={"syn-weight" + (d ? ` lint-${d.severity}` : "")} title={d?.message ?? "보기 가중치"}>{s}</span>);

@@ -1,0 +1,14 @@
+{
+  "name": "doc-error-comment-weight",
+  "about": "주석 항목의 w도 범위(0~1,000,000) 검사를 받는다. 값은 쓰이지 않지만 범위 밖이면 E_DOC.",
+  "covers": ["comment", "error"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {"schema": 1, "items": [{"id": "i001", "text": "x"}, {"id": "c001", "text": "# 메모", "w": 1000001}]}
+    }
+  },
+  "runs": [{"seed": "0", "error": "E_DOC"}]
+}

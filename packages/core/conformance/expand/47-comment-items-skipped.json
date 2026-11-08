@@ -1,0 +1,37 @@
+{
+  "name": "comment-items-skipped",
+  "about": "텍스트가 #로 시작하는 항목은 주석이라 후보에서 빠진다(SPEC 2.7). 주석 안의 깨진 문법, lock에 없는 참조, 저장 형태의 이름 참조는 검사하지 않는다. 주석의 w도 쓰이지 않는다. 맨 앞의 \\#은 글자 #. 결과는 주석 항목을 뺀 문서와 같다(성질 6).",
+  "covers": ["comment", "escape", "count"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "select": {"count": [1, 2]},
+        "items": [
+          {"id": "c01", "text": "# 머리색 모음 {깨진 문법 ${w:Wmissing0000}"},
+          {"id": "i001", "text": "red hair"},
+          {"id": "c02", "text": "#compass", "w": 5},
+          {"id": "i002", "text": "{silver|blue} hair"},
+          {"id": "c03", "text": "# ${hair color}"},
+          {"id": "i003", "text": "\\#compass"},
+          {"id": "i004", "text": "a\\#b, x #y"}
+        ]
+      }
+    }
+  },
+  "runs": [
+    {"seed": "0", "text": "red hair"},
+    {"seed": "1", "text": "a\\#b, x #y, red hair"},
+    {"seed": "2", "text": "red hair, #compass"},
+    {"seed": "3", "text": "red hair, #compass"},
+    {"seed": "4", "text": "red hair, #compass"},
+    {"seed": "5", "text": "a\\#b, x #y"},
+    {"seed": "6", "text": "blue hair, #compass"},
+    {"seed": "7", "text": "silver hair, #compass"},
+    {"seed": "8", "text": "a\\#b, x #y"},
+    {"seed": "9", "text": "red hair, blue hair"}
+  ]
+}

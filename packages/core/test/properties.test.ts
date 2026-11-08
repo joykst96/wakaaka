@@ -148,4 +148,39 @@ describe("SPEC 4.3 성질 (모든 공통 사례)", () => {
     }
     expect(compared).toBeGreaterThan(150);
   });
+
+  // 6. 주석 항목(SPEC 2.7)은 결과와 무관하다. 오류 사례는 주석을 빼면 오류가 사라질 수 있어(51, 52) 성공한 실행만 본다.
+  const isCommentText = (it: any) => it && typeof it.text === "string" && it.text.startsWith("#");
+  const dropComments: Mutate = (doc) => {
+    const kept = doc.items.filter((it: any) => !isCommentText(it));
+    const changed = kept.length !== doc.items.length;
+    doc.items = kept;
+    return changed;
+  };
+  const addComment: Mutate = (doc) => {
+    // 문법 오류, lock에 없는 참조, 저장 형태의 이름 참조가 든 주석. id는 사례에 없는 것
+    doc.items.splice(doc.items.length >> 1, 0, { id: "zzComment01", text: "# {broken ${w:Wnowhere0000} ${이름}", w: 7 });
+    return true;
+  };
+  for (const [name, mutate, min] of [
+    ["빼도", dropComments, 20],
+    ["더해도", addComment, 200],
+  ] as const) {
+    test(`6. 주석 항목을 ${name} 결과와 뽑기·선택 기록이 같다`, () => {
+      let compared = 0;
+      for (const c of cases) {
+        const v = variant(c.bundle, mutate);
+        if (v.changed === 0) continue;
+        for (const run of c.runs) {
+          if (run.text === undefined) continue;
+          const a = runAll(c, c.bundle, run.seed);
+          const b = runAll(c, v.bundle, run.seed);
+          expect(b.r, `${c.file} seed ${run.seed}`).toEqual(a.r);
+          expect(b.trace, `${c.file} seed ${run.seed}`).toEqual(a.trace);
+          compared++;
+        }
+      }
+      expect(compared).toBeGreaterThan(min);
+    });
+  }
 });

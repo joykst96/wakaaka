@@ -63,6 +63,24 @@ describe("escapeText 왕복", () => {
     }
   });
 
+  test("항목 맨 앞(atStart): # 와 \\# 로 시작해도 주석이 되지 않고 글자 그대로 (SPEC 2.7)", () => {
+    expect(escapeText("#compass", false, true)).toBe("\\#compass");
+    expect(escapeText("#compass")).toBe("#compass");
+    expect(escapeText("\\#a", false, true)).toBe("\\\\#a");
+    expect(escapeText("a#b", false, true)).toBe("a#b");
+    for (const s of ["#compass", "#", "##", "\\#a", "\\#", "\\\\#", "#{a}", " #a", "a#b", "\\", "{a|b}", "${x}", ""]) {
+      expect(literalOf(escapeText(s, false, true), false), JSON.stringify(s)).toBe(s);
+    }
+    const alphabet = ["#", "\\", "{", "}", "$", "|", "a", " "];
+    let x = 777;
+    const rnd = () => ((x = (x * 1103515245 + 12345) % 2 ** 31), x);
+    for (let i = 0; i < 20000; i++) {
+      let s = "";
+      for (let n = rnd() % 7; n > 0; n--) s += alphabet[rnd() % alphabet.length];
+      expect(literalOf(escapeText(s, false, true), false), JSON.stringify(s)).toBe(s);
+    }
+  });
+
   test("이스케이프가 필요 없는 백슬래시는 겹치지 않는다", () => {
     expect(escapeText("\\(a\\)")).toBe("\\(a\\)");
     expect(escapeText("\\||/")).toBe("\\||/");

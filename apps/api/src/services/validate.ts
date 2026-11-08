@@ -3,7 +3,7 @@
 //   → 깊이·묶음 크기와 영향 분석(경고) → 내용 해시
 // 본문 크기 제한, JSON.parse, 중복 키는 http.ts의 readJson이 먼저 한다. 저장(storeContent)은 바이트 비교로 해시 충돌을 막는다.
 
-import { collectRefs, docSchema, parse, trimSpecWhitespace, type Doc } from "@wakaaka/core";
+import { collectRefs, docSchema, isCommentItem, parse, trimSpecWhitespace, type Doc } from "@wakaaka/core";
 import { base62of256, canonicalize, sha256 } from "@wakaaka/core/hash";
 import type { Db } from "../db/connect.ts";
 import { ApiError } from "../http.ts";
@@ -40,7 +40,7 @@ export function checkName(name: string | undefined): string {
   return name;
 }
 
-/** 문서의 참조 (항목 ID, 대상). 문법 오류가 있으면 E_SYNTAX */
+/** 문서의 참조 (항목 ID, 대상). 문법 오류가 있으면 E_SYNTAX. 주석 항목(SPEC 2.7)은 parse가 빈 결과를 내서 참조도 오류도 없다 */
 export function docRefs(doc: Doc): Array<{ item: string; target: string }> {
   const out: Array<{ item: string; target: string }> = [];
   const seen = new Set<string>();
@@ -145,6 +145,7 @@ function poolStats(id: string, getDoc: (id: string) => Doc | undefined, memo: Ma
   if (hit) return hit;
   const r = { n: 0, sum: 0 };
   for (const it of getDoc(id)?.items ?? []) {
+    if (isCommentItem(it)) continue; // 주석 항목은 후보가 아니다(SPEC 2.7)
     if (it.ref !== undefined && it.spread === true) {
       const s = poolStats(it.ref.wildcard, getDoc, memo);
       r.n += s.n;

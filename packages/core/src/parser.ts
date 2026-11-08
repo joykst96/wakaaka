@@ -66,7 +66,17 @@ export interface ParseError {
   end: number;
 }
 
-export type ParseResult = { ok: true; nodes: Node[]; nodeCount: number } | { ok: false; error: ParseError };
+/**
+ * comment: 주석 텍스트(SPEC 2.7). 인라인 문법을 읽지 않으므로 nodes는 비어 있고 참조도 없다.
+ * 전개·후보에서 빼는 것은 부르는 쪽 일이다(isComment). 빈 노드 목록이라 참조를 모으는 쪽은 따로 거르지 않아도 된다.
+ */
+export type ParseResult = { ok: true; nodes: Node[]; nodeCount: number; comment?: true } | { ok: false; error: ParseError };
+
+/** 주석 항목의 텍스트인지 (SPEC 2.7): 첫 글자가 `#`. 앞 공백·전각 `＃`은 아니다 */
+export const isComment = (text: string): boolean => text.startsWith("#");
+
+/** 문서 항목이 주석 항목인지 (text 항목만 주석이 될 수 있다) */
+export const isCommentItem = (it: { text?: string | undefined }): boolean => it.text !== undefined && isComment(it.text);
 
 const STORED_REF = /^w:[0-9A-Za-z]{12}$/;
 /** 보기 맨 앞의 숫자·점 + `*` (SPEC 2.2 규칙 0). sticky: lastIndex 자리에서만 맞춘다 */
@@ -95,6 +105,8 @@ interface Frame {
 }
 
 export function parse(text: string, mode: ParseMode = "stored"): ParseResult {
+  // SPEC 2.2 맨 앞: `#`면 주석(아무것도 읽지 않는다)
+  if (isComment(text)) return { ok: true, nodes: [], nodeCount: 0, comment: true };
   const root: Node[] = [];
   const stack: Frame[] = [];
   let counter = 0;
@@ -113,6 +125,11 @@ export function parse(text: string, mode: ParseMode = "stored"): ParseResult {
   const fail = (code: SyntaxErrorCode, start: number, end: number): ParseResult => ({ ok: false, error: { code, start, end } });
 
   let i = 0;
+  // SPEC 2.2 맨 앞: `\#`은 글자 `#` (텍스트 맨 앞에서만 이스케이프)
+  if (text.startsWith("\\#")) {
+    addChar("#", 0);
+    i = 2;
+  }
   let altStart = false; // 바로 앞에서 선택지를 열었거나 보기를 나눴다
   while (i < text.length) {
     // 0. 보기 시작의 가중치 `정수*` (SPEC 2.2)

@@ -4,7 +4,7 @@
 // 코드는 가져오지 않았다(GPL-3.0).
 
 import { expand, type ExpandError } from "./expand.ts";
-import { parse, type Node } from "./parser.ts";
+import { isCommentItem, parse, type Node } from "./parser.ts";
 import { expandDocSchema, type ExpandDoc } from "./schema.ts";
 
 export type ImpactWarningCode =
@@ -96,7 +96,8 @@ export function toImpactPrompt(bundle: unknown, options: { rootWildcard?: string
         continue;
       }
       const w = it.w ?? 1;
-      if (w === 0) continue;
+      // 가중치 0과 주석 항목(SPEC 2.7)은 후보가 아니다
+      if (w === 0 || isCommentItem(it)) continue;
       if (it.ref !== undefined) {
         const target = it.ref.wildcard;
         out.push({ w, text: () => wildcardOf(hashOf(target), target) });

@@ -1,0 +1,12 @@
+{
+  "name": "doc-error-comment-duplicate-id",
+  "about": "주석 항목도 스키마 검사는 받는다: 다른 항목과 id가 겹치면 E_DOC.",
+  "covers": ["comment", "error"],
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {},
+    "docs": {"root00000000": {"schema": 1, "items": [{"id": "i001", "text": "x"}, {"id": "i001", "text": "# 같은 id"}]}}
+  },
+  "runs": [{"seed": "0", "error": "E_DOC"}]
+}

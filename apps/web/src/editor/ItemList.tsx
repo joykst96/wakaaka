@@ -2,7 +2,7 @@
 // 포커스가 있는 행에만 띄운다(나머지는 StaticText). 여러 줄을 붙여 넣으면 줄마다 항목이 생긴다.
 // 항목 전체가 참조인 행의 펼침 옵션은 여기서만 바꾼다. 항목 순서는 결과와 무관하다(SPEC 4.2 정렬).
 
-import { MAX_WEIGHT } from "@wakaaka/core";
+import { isCommentItem, MAX_WEIGHT } from "@wakaaka/core";
 import { Fragment, useMemo, useRef, useState, type DragEvent } from "react";
 import { flushSync } from "react-dom";
 import { newItemId, type EditItem } from "../lib/editdoc.ts";
@@ -65,8 +65,10 @@ export function ItemList({ items, onChange, context, lint, readOnly, highlight, 
     <div className="item-list" role="list">
       {items.map((it, index) => {
         const isRef = it.ref !== undefined;
+        // 주석 항목(SPEC 2.7): # 로 시작하는 행. 뽑히지 않는다
+        const isNote = isCommentItem(it);
         const editing = !readOnly && active?.id === it.id && !isRef;
-        const cls = ["item-row", highlight === it.id ? "is-highlight" : "", errorItem === it.id ? "is-error" : ""].join(" ");
+        const cls = ["item-row", isNote ? "is-comment" : "", highlight === it.id ? "is-highlight" : "", errorItem === it.id ? "is-error" : ""].join(" ");
         return (
           <Fragment key={it.id}>
           <div
@@ -94,7 +96,7 @@ export function ItemList({ items, onChange, context, lint, readOnly, highlight, 
               value={it.w}
               disabled={readOnly || (isRef && it.spread === true)}
               onChange={(w) => update(it.id, { w })}
-              title={isRef && it.spread ? "펼친 항목은 각자의 가중치를 쓴다" : "가중치 (비우면 1)"}
+              title={isRef && it.spread ? "펼친 항목은 각자의 가중치를 쓴다" : isNote ? "주석 항목은 뽑히지 않아 가중치를 쓰지 않는다" : "가중치 (비우면 1)"}
             />
             <div className="item-text">
               {isRef ? (
@@ -181,7 +183,7 @@ export function ItemList({ items, onChange, context, lint, readOnly, highlight, 
                 </div>
               )}
             </div>
-            {!readOnly && !isRef && (it.text ?? "").includes("{") && (
+            {!readOnly && !isRef && !isNote && (it.text ?? "").includes("{") && (
               <button
                 type="button"
                 className="btn btn-ghost btn-sm item-weights"

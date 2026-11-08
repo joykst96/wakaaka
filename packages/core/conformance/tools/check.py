@@ -59,7 +59,10 @@ def check_syntax(rep):
     for case in cases:
         exp = case["expect"]
         try:
-            got = {"ast": R.parse(case["text"], case.get("mode", "stored"))}
+            if R.is_comment(case["text"]):
+                got = {"comment": True}  # SPEC 2.4: 주석은 구문 트리가 아니라 "주석"
+            else:
+                got = {"ast": R.parse(case["text"], case.get("mode", "stored"))}
         except R.SpecError as e:
             got = {"error": e.code}
         ok = ("ast" in got) if "ok" in exp else (got == exp)
@@ -199,6 +202,22 @@ def variants(bundle):
             if isinstance(it, dict) and isinstance(it.get("text"), str):
                 it["text"] += "§"
     yield "text-edited", lit, "trace"
+    # 성질 6: 주석 항목을 모두 빼거나, 문서마다 주석 항목을 더한다 → 결과와 뽑기 기록이 같아야 한다
+    drop = copy.deepcopy(bundle)
+    changed = False
+    for d in drop["docs"].values():
+        if isinstance(d.get("items"), list):
+            kept = [it for it in d["items"] if not (isinstance(it, dict) and isinstance(it.get("text"), str) and R.is_comment(it["text"]))]
+            changed = changed or len(kept) != len(d["items"])
+            d["items"] = kept
+    if changed:
+        yield "comments-removed", drop, "both"
+    add = copy.deepcopy(bundle)
+    for d in add["docs"].values():
+        if isinstance(d.get("items"), list):
+            # 문법 오류, 없는 참조, 자기 참조가 든 주석. id는 사례에 없는 것
+            d["items"].insert(len(d["items"]) // 2, {"id": "zzComment01", "text": "# {broken ${w:Wnowhere0000} ${이름}", "w": 7})
+    yield "comment-added", add, "both"
 
 
 def check_expand(rep, update):
@@ -223,9 +242,9 @@ def check_expand(rep, update):
             for vname, vb, how in variants(case["bundle"]):
                 vtrace = []
                 vgot = run_case(vb, limits, run["seed"], vtrace)
-                if how == "text" and vgot != got:
+                if how in ("text", "both") and vgot != got:
                     rep.fail(f"property {vname} expand/{fn} seed={run['seed']}: {got} vs {vgot}")
-                if how == "trace" and vtrace != trace:
+                if how in ("trace", "both") and vtrace != trace:
                     rep.fail(f"property {vname} expand/{fn} seed={run['seed']}: trace differs")
         if update:
             save("expand/" + fn, case)

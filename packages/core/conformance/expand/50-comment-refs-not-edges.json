@@ -1,0 +1,23 @@
+{
+  "name": "comment-refs-not-edges",
+  "about": "주석 안의 참조는 간선이 아니다: 자기 자신을 가리켜도 E_CYCLE이 아니고, maxDepth 0에서도 E_DEPTH가 아니다. 주석이 아니면 둘 다 오류다.",
+  "covers": ["comment", "depth", "limits", "error"],
+  "limits": {"maxDepth": 0},
+  "bundle": {
+    "format": 1,
+    "root": "root00000000",
+    "lock": {"Wroot0000000": "root00000000", "Wchild000000": "child0000000"},
+    "docs": {
+      "root00000000": {
+        "schema": 1,
+        "items": [
+          {"id": "c01", "text": "# ${w:Wchild000000}"},
+          {"id": "c02", "text": "#${w:Wroot0000000}"},
+          {"id": "i001", "text": "x"}
+        ]
+      },
+      "child0000000": {"schema": 1, "items": [{"id": "a", "text": "never"}]}
+    }
+  },
+  "runs": [{"seed": "0", "text": "x"}, {"seed": "1", "text": "x"}, {"seed": "2", "text": "x"}]
+}

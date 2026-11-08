@@ -45,8 +45,15 @@ def _ref_node(body, mode, pos):
     return {"ref": "name", "name": body.strip(BLANK)}
 
 
+def is_comment(text):
+    """SPEC 2.7: 첫 글자가 #인 텍스트는 주석이다(앞 공백, 전각 ＃은 아님)."""
+    return text.startswith("#")
+
+
 def parse(text, mode="stored"):
-    """텍스트를 SPEC 2.4절의 구문 트리(JSON 호환 list)로 바꾼다."""
+    """텍스트를 SPEC 2.4절의 구문 트리(JSON 호환 list)로 바꾼다. 주석(is_comment)은 부르는 쪽이 먼저 거른다."""
+    if is_comment(text):
+        raise ValueError("comment text is not parsed (SPEC 2.7)")
     root = []
     cur = root
     stack = []  # (choice 노드, 바깥 노드 목록, 여는 괄호 위치)
@@ -62,6 +69,9 @@ def parse(text, mode="stored"):
                 cur.append(s)
 
     i, n = 0, len(text)
+    if text.startswith("\\#"):  # SPEC 2.2: 텍스트 맨 앞의 \#은 글자 #
+        buf.append("#")
+        i = 2
     alt_start = False  # 바로 앞에서 선택지를 열었거나 보기를 나눴다
     while i < n:
         if alt_start:
@@ -262,6 +272,8 @@ def check_doc(doc):
         if "text" in it:
             if not isinstance(it["text"], str):
                 raise SpecError("E_DOC")
+            if is_comment(it["text"]):
+                continue  # SPEC 2.7: 주석 항목은 스키마만 보고 문서에 없는 것처럼 뺀다
             entry["text"] = it["text"]
         else:
             ref = it["ref"]

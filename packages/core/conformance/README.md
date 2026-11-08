@@ -5,9 +5,9 @@ TS 전개기(`packages/core`)와 Python 전개기(별도 저장소 `joykst96/com
 
 | 파일 | 내용 | 명세 |
 |---|---|---|
-| `syntax.json` | 인라인 문법 파서: 텍스트 → 구문 트리 또는 오류 코드 (83개) | 2절 |
+| `syntax.json` | 인라인 문법 파서: 텍스트 → 구문 트리, 주석, 또는 오류 코드 (107개) | 2절 |
 | `primitives.json` | 기본 연산 벡터: FNV-1a, mix64, SplitMix64, derive, H, bounded, 비복원 추출(6절), 쉼표 정리(4.4절) (56개) | 4.4, 6절 |
-| `expand/*.json` | 전개: 묶음 + seed → 문자열 또는 오류 코드 (46개 사례, 243회 실행) | 3~5절 |
+| `expand/*.json` | 전개: 묶음 + seed → 문자열 또는 오류 코드 (52개 사례, 272회 실행) | 3~5절 |
 | `hash.json` | 내용 해시: base62(8개), JCS 정규화(6개), 문서 → JCS·sha256·해시(5개) (19개) | 7절 |
 
 ## 형식
@@ -19,7 +19,7 @@ TS 전개기(`packages/core`)와 Python 전개기(별도 저장소 `joykst96/com
 ```
 
 - `mode`: `stored`(기본, 저장 형태) 또는 `edit`(이름 참조 허용).
-- `expect`: `ast`(SPEC 2.4절 표기와 정확히 같아야 함), `error`(오류 코드), `ok: true`(파싱 성공만 확인, 64겹 중첩처럼 트리가 너무 긴 경우) 중 하나.
+- `expect`: `ast`(SPEC 2.4절 표기와 정확히 같아야 함), `error`(오류 코드), `ok: true`(파싱 성공만 확인, 64겹 중첩처럼 트리가 너무 긴 경우), `comment: true`(주석 텍스트, SPEC 2.7절) 중 하나.
 
 ### primitives.json
 
@@ -47,7 +47,7 @@ TS 전개기(`packages/core`)와 Python 전개기(별도 저장소 `joykst96/com
 - `limits`는 생략하면 기본값(`maxDepth` 16, `maxExpansions` 10000).
 - `runs`의 각 항목은 `text`(정확히 같은 문자열) 또는 `error`(오류 코드) 중 하나다.
 - `covers`는 사례가 다루는 주제 표시다: `basic` `weights` `count` `sep` `no-replacement` `empty` `choice` `escape` `unicode` `numbering`
-  `choice-weight` `ref-mine` `ref-item` `lock` `spread` `diamond` `repeat` `depth` `budget` `limits` `seed` `bundle` `syntax` `error` `cleanup` `realistic`.
+  `choice-weight` `comment` `ref-mine` `ref-item` `lock` `spread` `diamond` `repeat` `depth` `budget` `limits` `seed` `bundle` `syntax` `error` `cleanup` `realistic`.
 
 ### hash.json
 
@@ -81,11 +81,12 @@ TS 쪽은 루트의 `npm test`가 이 파일들을 그대로 읽어 돌린다(`p
 - spread가 아닌 ref 항목을 인라인 참조 텍스트(`${w:…}`)로 바꿔도 결과가 같다.
 - 모든 텍스트 끝에 글자를 덧붙여도 뽑기·선택 기록이 같다.
 - 가중치를 적지 않은 모든 선택지 보기에 `1*`을 적어도 결과가 같다(성질 5, 보기 가중치 문법 이전과 결과가 같다는 뜻).
+- 주석 항목을 모두 빼도, 문서마다 주석 항목(문법 오류·없는 참조가 든 것)을 하나 더해도 결과와 뽑기 기록이 같다(성질 6, 주석 문법 이전과 결과가 같다는 뜻).
 
 ## 상태
 
 - `syntax.json`의 기대 구문 트리는 손으로 썼고 참조 모델과 일치한다.
 - `primitives.json`은 참조 모델(Python)과 별도 TS 구현이 일치한다.
-- `expand/*.json`의 기대 출력은 참조 모델이 만든 것이고, **Phase 1 TS 전개기(`packages/core`)가 참조 모델 코드를 보지 않고 명세만으로 전부 통과해 확정됐다**(2026-11-03). 37~40은 Phase 1에 손으로 쓴 사례다(`docs/NOTES.md`). 41~45는 보기 가중치(Phase 3 뒤 추가): 42는 08의 기대 출력을 손으로 옮겼고, 41·43은 참조 모델이 채웠고, 44·45와 문법 사례 24개는 손으로 썼다. 46(spread 펼치기도 전개 횟수에 센다)은 Phase 4에 더했다. 기대값은 참조 모델로 내고, 상한 없이 전개하면 `z`가 나오는 seed만 `E_BUDGET`인 것을 확인했다(`docs/NOTES.md`).
+- `expand/*.json`의 기대 출력은 참조 모델이 만든 것이고, **Phase 1 TS 전개기(`packages/core`)가 참조 모델 코드를 보지 않고 명세만으로 전부 통과해 확정됐다**(2026-11-03). 37~40은 Phase 1에 손으로 쓴 사례다(`docs/NOTES.md`). 41~45는 보기 가중치(Phase 3 뒤 추가): 42는 08의 기대 출력을 손으로 옮겼고, 41·43은 참조 모델이 채웠고, 44·45와 문법 사례 24개는 손으로 썼다. 46(spread 펼치기도 전개 횟수에 센다)은 Phase 4에 더했다. 기대값은 참조 모델로 내고, 상한 없이 전개하면 `z`가 나오는 seed만 `E_BUDGET`인 것을 확인했다(`docs/NOTES.md`). 47~52(주석 항목, 2026-11-08)는 입력을 손으로 쓰고 기대값은 참조 모델이 채웠다. 51·52는 오류 사례이고, 47~50의 기대값은 성질 6(주석을 뺀 문서와 같다)으로 따로 확인된다. 문법 사례 24개(주석, 맨 앞 `\#`)는 손으로 썼다.
 - `hash.json`은 손으로 쓴 값, Python(`hashvec.py`), TS(`packages/core/src/hash.ts`)가 모두 일치한다.
 - 기대값이 어긋나면 명세를 읽고 어느 쪽이 틀렸는지 가린 뒤, 명세나 테스트를 먼저 고친다.

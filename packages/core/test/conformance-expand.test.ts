@@ -6,8 +6,8 @@ const cases = loadExpandCases();
 
 describe("conformance: expand/*.json", () => {
   test("사례 수와 실행 수", () => {
-    expect(cases.length).toBe(46);
-    expect(cases.reduce((n, c) => n + c.runs.length, 0)).toBe(243);
+    expect(cases.length).toBe(52);
+    expect(cases.reduce((n, c) => n + c.runs.length, 0)).toBe(272);
   });
   for (const c of cases) {
     test.each(c.runs.map((r) => [r.seed, r] as const))(`${c.file} seed %s`, (_, r) => {

@@ -18,13 +18,17 @@ export function promptTag(name: string): string {
  * 백슬래시는 바로 뒤가 이스케이프 대상이거나 끝일 때만 겹친다. 그래서 `\(` `\m/`는 읽기 쉬운 그대로 남는다.
  * 선택지 보기 맨 앞의 `정수*`는 보기 가중치로 읽힌다(SPEC 2.2 규칙 0). 태그 이름에는 `*`가 없어서(옛 CSV 114,092개, 새 CSV 150,993개 모두 0개, NOTES)
  * 태그를 넣을 때는 일어나지 않는다. 글자 `3*x`로 시작하는 보기가 필요하면 `{1*3*x}`로 쓴다.
+ * atStart: 넣는 자리가 항목 텍스트 맨 앞이다. 맨 앞의 `#`는 주석 표시라(SPEC 2.7) `\#`로, 맨 앞의 `\#`는 `\\#`로 넣는다
+ * (태그 `#compass` 등 새 CSV 3개). 맨 앞이 아닌 `#`는 글자라 그대로다.
  */
-export function escapeText(s: string, inChoice = false): string {
+export function escapeText(s: string, inChoice = false, atStart = false): string {
   let out = "";
   for (let i = 0; i < s.length; i++) {
     const c = s[i]!;
     const n = s[i + 1];
-    if ("{}$".includes(c) || (inChoice && c === "|")) out += "\\" + c;
+    if (atStart && i === 0 && c === "#") out += "\\#";
+    else if (atStart && i === 0 && c === "\\" && n === "#") out += "\\\\";
+    else if ("{}$".includes(c) || (inChoice && c === "|")) out += "\\" + c;
     else if (c === "\\" && (n === undefined || "{}$\\".includes(n) || (inChoice && n === "|"))) out += "\\\\";
     else out += c;
   }

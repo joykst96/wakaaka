@@ -103,6 +103,7 @@ class ChipWidget extends WidgetType {
 export const depthClass = (depth: number) => "d" + (((depth - 1) % 3) + 1);
 
 const marks = {
+  comment: Decoration.mark({ class: "wk-comment" }),
   escape: Decoration.mark({ class: "wk-escape" }),
   nameref: Decoration.mark({ class: "wk-nameref" }),
   foreign: Decoration.mark({ class: "wk-foreign" }),
@@ -326,7 +327,7 @@ const tagCompletion: CompletionSource = async (cc: CompletionContext): Promise<C
     filter: false,
     options: tags.map(
       (t): TagCompletion => ({
-        label: tagInsertText(t.name, frag.inChoice),
+        label: tagInsertText(t.name, frag.inChoice, frag.from === 0),
         displayLabel: tagDisplayName(t.name),
         detail: formatPostCount(t.postCount),
         type: TAG_TYPE + t.category,
