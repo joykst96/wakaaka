@@ -1,13 +1,13 @@
 // 주석 항목 (SPEC 2.7): `#`로 시작하는 행·줄. 편집기 색칠·진단·자동완성·이름 참조·미리보기·텍스트 보기가 같은 규칙을 쓰는지
 
 import { describe, expect, test } from "vitest";
-import type { Doc } from "@wakaaka/core";
+import { expand, type Doc } from "@wakaaka/core";
 import { diagnose, openRefBefore, tokenize, type LintContext } from "../src/editor/syntax.ts";
 import { tagFragmentBefore, tagInsertText, tagLint, tagPieces, type TagLookup } from "../src/editor/tags.ts";
 import { exampleOutputs, GUIDE } from "../src/lib/guide.ts";
 import { nameRefs, rewriteItems } from "../src/lib/names.ts";
 import { directRefs } from "../src/lib/preview.ts";
-import { itemsToText, itemToLine, parseLine, textToItems } from "../src/lib/textview.ts";
+import { itemsToExportText, itemsToText, itemToLine, parseLine, textToItems } from "../src/lib/textview.ts";
 
 const lint: LintContext = { mineIds: new Set(["AAAAAAAAAAAA"]), mineNames: new Map([["hair", "AAAAAAAAAAAA"]]) };
 const show = (text: string) => tokenize(text).map((t) => `${t.type}:${text.slice(t.from, t.to)}`);
@@ -87,6 +87,45 @@ describe("텍스트 보기", () => {
     const r = textToItems(old, "# 머리색\n" + itemsToText(old) + "\n# 끝", random);
     expect(r.items.map((i) => i.text)).toEqual(["# 머리색", "red hair", "blue hair", "# 끝"]);
     expect(r.items.filter((i) => !i.text!.startsWith("#")).map((i) => i.id)).toEqual(["aaaa", "bbbb"]);
+  });
+});
+
+describe("내보내기 (와카아카 텍스트 형식)", () => {
+  const items = [
+    { id: "c1", text: "# 머리색 모음 {깨진" },
+    { id: "a", text: "red hair", w: 3 },
+    { id: "c2", text: "# 가중치 뒤 주석", w: 5 },
+    { id: "b", text: "{silver|blue} hair" },
+    { id: "e", text: "\\#compass" },
+    { id: "s", text: " #not comment" },
+    { id: "r", ref: "AAAAAAAAAAAA", spread: true },
+  ];
+
+  test("주석 줄은 빠지고 나머지 줄은 텍스트 보기와 같다", () => {
+    expect(itemsToExportText(items)).toBe(["3* red hair", "{silver|blue} hair", "\\#compass", " #not comment", "${w:AAAAAAAAAAAA}"].join("\n"));
+    // 텍스트 보기 자체(편집기)에는 주석이 남는다
+    expect(itemsToText(items).split("\n")).toContain("# 머리색 모음 {깨진");
+  });
+
+  test("주석이 없으면 텍스트 보기와 글자 하나까지 같다", () => {
+    const plain = items.filter((i) => !(i.text ?? "").startsWith("#"));
+    expect(itemsToExportText(plain)).toBe(itemsToText(plain));
+  });
+
+  test("내보낸 줄을 다시 읽으면 주석이 아닌 항목과 같고, 같은 ID로 전개하면 결과가 원본과 같다", () => {
+    const kept = items.filter((i) => i.ref === undefined && !i.text!.startsWith("#"));
+    const lines = itemsToExportText(items.filter((i) => i.ref === undefined)).split("\n");
+    expect(lines.map(parseLine)).toEqual(kept.map((i) => (i.w === undefined ? { text: i.text } : { text: i.text, w: i.w })));
+    // 내보낸 줄로 만든 문서(원래 ID를 붙임)와 주석이 든 원본 문서를 seed 500개로 대조
+    const src = items.filter((i) => i.ref === undefined);
+    const orig: Doc = { schema: 1, select: { count: [1, 2] }, items: src.map((i) => (i.w === undefined ? { id: i.id, text: i.text! } : { id: i.id, text: i.text!, w: i.w })) };
+    const back: Doc = { schema: 1, select: { count: [1, 2] }, items: lines.map((l, k) => { const p = parseLine(l); return p.w === undefined ? { id: kept[k]!.id, text: p.text } : { id: kept[k]!.id, text: p.text, w: p.w }; }) };
+    const b = (d: Doc) => ({ format: 1, root: "root00000000", lock: {}, docs: { root00000000: d } });
+    for (let s = 0; s < 500; s++) {
+      const x = expand(b(orig), BigInt(s));
+      const y = expand(b(back), BigInt(s));
+      expect(y, `seed ${s}`).toEqual(x);
+    }
   });
 });
 

@@ -1,6 +1,6 @@
 // 내보내기 (DESIGN 11절 오른쪽 패널): 드롭다운(Impact Pack[기본], 와카아카)과 복사 버튼.
 // 지금 보이는 내용(저장 안 한 것 포함)을 쓴다. Impact Pack은 core toImpactPrompt(API /api/w/{id}/export와 같은 함수),
-// 와카아카는 텍스트 보기 형식. 변환 경고는 복사하면서 보여 준다(사용자 결정: 경고 후 그대로 복사).
+// 와카아카는 텍스트 보기 형식. 두 형식 모두 주석 항목은 빼고 내보낸다(Impact Pack은 toImpactPrompt가 뺀다). 변환 경고는 복사하면서 보여 준다(사용자 결정: 경고 후 그대로 복사).
 
 import { toImpactPrompt, type ImpactWarning, type ImpactWarningCode } from "@wakaaka/core";
 import { useState } from "react";
@@ -8,7 +8,7 @@ import { getMeta } from "../app/cache.ts";
 import { loadFlag, saveFlag } from "../lib/drafts.ts";
 import type { EditItem } from "../lib/editdoc.ts";
 import type { BundleLike } from "../lib/preview.ts";
-import { itemsToText } from "../lib/textview.ts";
+import { itemsToExportText } from "../lib/textview.ts";
 
 type Format = "impact" | "wakaaka";
 
@@ -45,7 +45,7 @@ export function ExportPanel({ bundle, blocked, items, selfId, selfName }: Export
     setWarnings([]);
     let text: string;
     if (format === "wakaaka") {
-      text = itemsToText(items);
+      text = itemsToExportText(items); // 주석 항목은 빼고 내보낸다(DESIGN 3절 "주석 항목")
     } else {
       if (blocked) return setStatus({ ok: false, text: blocked });
       if (!bundle) return setStatus({ ok: false, text: "아직 불러오는 중입니다" });
@@ -88,7 +88,7 @@ export function ExportPanel({ bundle, blocked, items, selfId, selfName }: Export
       <p className="text-muted export-help">
         {format === "impact"
           ? "Impact Pack 와일드카드 노드의 텍스트 칸에 붙여 넣습니다. 하위 와일드카드를 모두 펼친 한 줄이고, 뽑힐 확률은 같지만 seed가 같아도 결과는 다릅니다."
-          : "텍스트 보기 형식(한 줄에 항목 하나, 3* 가중치)입니다. 다른 와일드카드의 텍스트 보기에 붙여 넣을 수 있습니다."}
+          : "텍스트 보기 형식(한 줄에 항목 하나, 3* 가중치)입니다. 다른 와일드카드의 텍스트 보기에 붙여 넣을 수 있습니다. # 주석 줄은 빠집니다."}
       </p>
       {status && (
         <p className={status.ok ? "text-success" : "text-danger"} role="status">

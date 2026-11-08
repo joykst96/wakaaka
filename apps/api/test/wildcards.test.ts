@@ -283,6 +283,29 @@ describe("주석 항목 (SPEC 2.7)", () => {
     expect(r.body.warnings).toEqual([{ code: "W_WEIGHT_ZERO", wildcard: outer }]);
   });
 
+  it("내보내기(/export)는 주석을 빼고 주석 없는 문서와 같다. 저장 문서·노드 묶음·해시는 주석을 포함한다", async () => {
+    const leaf = await alice.create(doc("leaf", [{ id: "c", text: "# 잎 메모" }, { id: "l", text: "leaf" }, { id: "m", text: "{x|y}" }]));
+    const items = [{ id: "c", text: `# 메모 ${W(leaf)} {깨진` }, { id: "a", text: `red ${W(leaf)}`, w: 2 }, { id: "b", text: "\\#compass" }];
+    const noted = await alice.create(doc("noted", items));
+    const plainLeaf = await alice.create(doc("leaf2", [{ id: "l", text: "leaf" }, { id: "m", text: "{x|y}" }]));
+    const plain = await alice.create(doc("plain", [{ id: "a", text: `red ${W(plainLeaf)}`, w: 2 }, { id: "b", text: "\\#compass" }]));
+    const ex = await alice.get(`/api/w/${noted}/export?format=impact`);
+    expect(ex.status).toBe(200);
+    expect(ex.body.text).not.toContain("메모");
+    expect(ex.body.text).toBe((await alice.get(`/api/w/${plain}/export?format=impact`)).body.text);
+    // 전개 결과도 주석을 뺀 문서와 같다
+    for (let s = 0; s < 20; s++) {
+      expect((await alice.get(`/api/w/${noted}/resolve?seed=${s}`)).body.text).toBe((await alice.get(`/api/w/${plain}/resolve?seed=${s}`)).body.text);
+    }
+    // 편집기가 다시 여는 저장 문서에는 주석이 남는다
+    expect((await alice.get(`/api/wildcards/${noted}`)).body.doc.items).toEqual(items);
+    // 노드용 묶음은 문서를 바꾸지 않는다: 주석이 있고, 키가 내용 해시와 맞는다
+    const b = (await alice.get(`/api/w/${noted}/bundle`)).body;
+    for (const [h, d] of Object.entries(b.docs)) expect(contentHash(d as never), h).toBe(h);
+    expect(JSON.stringify(b.docs)).toContain("# 메모");
+    expect(JSON.stringify(b.docs)).toContain("# 잎 메모");
+  });
+
   it("가져오기: 주석은 그대로 복사하고(참조 ID를 바꾸지 않음) 결과가 원본과 같다", async () => {
     const leaf = await alice.create(doc("leaf", [{ id: "l", text: "leaf" }]));
     const root = await alice.create(doc("root", [{ id: "c", text: `# 원래 ${W(leaf)} {깨진` }, { id: "a", text: `x ${W(leaf)}` }]));

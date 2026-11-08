@@ -12,7 +12,7 @@
 // ID 유지: 정확히 같은 줄끼리 LCS로 짝을 짓고(바뀌지 않은 줄 = 기존 ID), 짝 사이 구간에서는
 // 남은 옛 줄과 새 줄을 앞에서부터 위치로 짝짓는다(같은 위치에서 고친 줄 = 기존 ID). 남는 새 줄만 새 ID다.
 
-import { MAX_WEIGHT } from "@wakaaka/core";
+import { isCommentItem, MAX_WEIGHT } from "@wakaaka/core";
 import { newItemId, type EditItem } from "./editdoc.ts";
 
 /** 가중치 줄: `3* 텍스트` */
@@ -40,6 +40,14 @@ export function itemToLine(it: EditItem): string {
 
 export function itemsToText(items: readonly EditItem[]): string {
   return items.map(itemToLine).join("\n");
+}
+
+/**
+ * 내보내기(와카아카 형식)용 텍스트: 텍스트 보기와 같은 줄 형식에서 주석 항목(SPEC 2.7)만 뺀다(DESIGN 3절 "주석 항목").
+ * 주석은 결과에 영향이 없으므로 빼도 전개 결과가 같다. 주석이 없으면 itemsToText와 같다.
+ */
+export function itemsToExportText(items: readonly EditItem[]): string {
+  return itemsToText(items.filter((it) => !isCommentItem(it)));
 }
 
 export interface LineParse {
