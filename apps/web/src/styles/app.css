@@ -988,6 +988,12 @@ textarea.editor-desc {
     display: block;
     background: var(--wk-scrim);
   }
+}
+
+/* ---------------- 1280px 아래: 편집 화면 1단 ----------------
+   사이드바와 오른쪽 패널이 고정 폭이라 편집기 칸은 화면 폭 - 약 895px이다.
+   1280px 아래에서는 380px보다 좁아지므로 오른쪽 패널을 편집기 아래로 내린다(DESIGN 11절) */
+@media (max-width: 1279px) {
   .workspace {
     grid-template-columns: minmax(0, 1fr);
   }
