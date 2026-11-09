@@ -121,9 +121,26 @@
   --item-weight-comment-fg: var(--color-fg-subtle);
   --item-static-padding: var(--space-1_5) var(--space-2);
   --item-static-min-height: var(--space-8);
-  /* 빈 목록의 "첫 항목 입력" 자리(점선) */
-  --item-empty-padding: var(--item-static-padding);
-  --item-empty-border: var(--color-border-strong);
+  /* 빈 목록의 "첫 항목 입력" 카드(카드 전체가 버튼, 강조색 점선) */
+  --item-empty-padding: var(--space-5) var(--space-4);
+  --item-empty-gap: var(--gap-sm);
+  --item-empty-radius: var(--radius-lg);
+  --item-empty-border-width: var(--border-width-thick);
+  --item-empty-border: var(--color-accent-border);
+  --item-empty-border-hover: var(--color-accent);
+  --item-empty-bg: var(--color-accent-subtle);
+  --item-empty-bg-hover: var(--color-accent-subtle-hover);
+  --item-empty-title-font: var(--font-heading);
+  --item-empty-hint-font: var(--font-body-sm);
+  --item-empty-hint-fg: var(--color-fg-muted);
+  --item-empty-cta-bg-hover: var(--color-accent-solid-hover); /* 카드에 마우스를 올리면 안쪽 버튼 모양도 hover */
+  /* 가운데 + 아이콘: 글자(+)는 글꼴마다 위아래 자리가 달라 원 안에서 내려앉는다. 막대 두 개를 정중앙에 그린다 */
+  --item-empty-icon-size: var(--space-8);
+  --item-empty-icon-radius: var(--radius-full);
+  --item-empty-icon-bg: var(--color-accent-solid);
+  --item-empty-icon-fg: var(--color-on-accent);
+  --item-empty-icon-bar-length: var(--space-3_5);
+  --item-empty-icon-bar-width: var(--border-width-thick);
 
   /* 선택지 가중치 패널 (항목 행 아래) */
   --choice-weights-indent: var(--space-8);

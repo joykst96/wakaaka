@@ -210,9 +210,13 @@ export function ItemList({ items, onChange, context, lint, readOnly, highlight, 
         );
       })}
       {!readOnly && items.length === 0 && (
-        // 빈 목록: 첫 항목을 쓸 자리를 보인다(설명칸을 항목 입력칸으로 아는 일이 있었다, 사용자 요청 2026-11-09)
+        // 빈 목록: 첫 항목을 쓸 자리를 보인다(설명칸을 항목 입력칸으로 아는 일이 있었다, 사용자 요청 2026-11-09).
+        // 카드 전체가 버튼 하나다. 안쪽 "버튼"은 모양만(span) — 버튼 안에 버튼을 두지 않는다(사용자 선택 2026-11-09)
         <button type="button" className="item-empty" onClick={() => insertAfter(null, [""])}>
-          여기를 눌러 첫 항목을 입력하세요
+          <span className="item-empty-icon" aria-hidden="true" />
+          <span className="item-empty-title">아직 항목이 없습니다</span>
+          <span className="btn btn-sm item-empty-cta">여기를 눌러 첫 항목을 입력하세요</span>
+          <span className="item-empty-hint">한 줄에 하나씩 씁니다. 여러 줄을 한꺼번에 붙여 넣으려면 텍스트 보기를 쓰세요.</span>
         </button>
       )}
       {!readOnly && items.length > 0 && (
