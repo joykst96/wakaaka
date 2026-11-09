@@ -3,7 +3,10 @@
 // 화면 읽기 프로그램: 읽기 영역(status, alert)은 늘 DOM에 두고 그 안에 토스트를 넣는다(영역을 새로 만들면 읽지 않는 경우가 있다).
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { dropToast, pushToast, roleOf, TOAST_MS, type Toast, type ToastInput } from "../lib/toasts.ts";
+import { dropToast, pushToast, roleOf, TOAST_MS, type Toast, type ToastInput, type ToastKind } from "../lib/toasts.ts";
+
+/** 종류 아이콘(눈으로만 구분, 화면 읽기에서는 숨김). 색은 app.css의 .toast-종류 */
+const ICON: Record<ToastKind, string> = { info: "i", success: "✓", warning: "!", error: "×" };
 
 const ToastContext = createContext<(t: ToastInput) => void>(() => {});
 
@@ -54,6 +57,9 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss(id: number): 
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocus(false);
       }}
     >
+      <span className="toast-icon" aria-hidden="true">
+        {ICON[toast.kind]}
+      </span>
       <span className="toast-text">{toast.text}</span>
       <button type="button" className="btn btn-ghost btn-sm toast-close" aria-label="알림 닫기" onClick={() => onDismiss(toast.id)}>
         ×
