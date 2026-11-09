@@ -7,6 +7,7 @@ import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { linter, type Diagnostic as CmDiagnostic } from "@codemirror/lint";
 import { EditorState, Facet, Prec, RangeSetBuilder, StateEffect, type Extension } from "@codemirror/state";
 import { Decoration, EditorView, hoverTooltip, keymap, placeholder as cmPlaceholder, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from "@codemirror/view";
+import { FIXED_TITLE } from "../components/FixedBadge.tsx";
 import type { TagSuggestion } from "../lib/api.ts";
 import { linePrefixLength } from "../lib/textview.ts";
 import { diagnose, openRefBefore, tokenize, type LintContext } from "./syntax.ts";
@@ -33,6 +34,8 @@ export interface RefOption {
   /** 내 것이면 null */
   owner: string | null;
   section: "mine" | "favorite" | "explore";
+  /** 고정 와일드카드 (DESIGN 3절 "고정 표시"). 후보 이름 앞에 고정 배지를 단다 */
+  fixed: boolean;
 }
 
 export interface EditorContext {
@@ -258,7 +261,8 @@ const refCompletion: CompletionSource = async (cc: CompletionContext): Promise<C
     to: cc.pos,
     filter: false,
     options: options.map(
-      (o): Completion => ({
+      (o): RefCompletion => ({
+        fixed: o.fixed,
         label: "${" + o.name + "}",
         displayLabel: o.name,
         detail: o.owner ? `${o.owner} · 가져오기` : undefined,
@@ -270,6 +274,33 @@ const refCompletion: CompletionSource = async (cc: CompletionContext): Promise<C
       }),
     ),
   };
+};
+
+/** 참조 후보: 고정이면 이름 앞에 배지 */
+interface RefCompletion extends Completion {
+  fixed: boolean;
+}
+
+/** 이름 앞 고정 배지 (DESIGN 11절 "고정 배지"). 그림자 루트 안이라 앱 CSS 대신 테마의 .wk-fixed-badge로 칠한다 */
+const fixedBadgeOption = {
+  position: 45,
+  render: (c: Completion) => {
+    const fixed = (c as Partial<RefCompletion>).fixed;
+    if (fixed === undefined) return null; // 태그 후보
+    const el = document.createElement("span");
+    if (!fixed) {
+      // 고정이 아닌 참조 후보도 같은 폭을 비워 이름 줄을 맞춘다
+      el.className = "wk-fixed-badge wk-fixed-space";
+      el.setAttribute("aria-hidden", "true");
+      return el;
+    }
+    el.className = "wk-fixed-badge";
+    el.textContent = "F";
+    el.title = FIXED_TITLE;
+    el.setAttribute("role", "img");
+    el.setAttribute("aria-label", "고정");
+    return el;
+  },
 };
 
 /** 태그 후보: 분류(색 클래스)와 설명을 같이 들고 다닌다 */
@@ -383,7 +414,7 @@ export function setup(o: SetupOptions): Extension[] {
         activateOnTypingDelay: 150,
         // 태그 후보는 분류 색 클래스(wk-tag-<번호>)를 단다
         optionClass: (c) => (c.type?.startsWith(TAG_TYPE) ? c.type : ""),
-        addToOptions: [tagSummaryOption],
+        addToOptions: [fixedBadgeOption, tagSummaryOption],
       }),
     );
   const line = o.line;

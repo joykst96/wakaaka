@@ -67,14 +67,14 @@ export function useEditorContext(o: EditorContextOptions): EditorContext {
             const q = query.trim().toLowerCase();
             const seen = new Set<string>(o.selfId ? [o.selfId] : []);
             const out: RefOption[] = [];
-            const push = (xs: Array<{ id: string; name: string; owner: string }>, section: RefOption["section"], own: boolean, limit: number) => {
+            const push = (xs: Array<{ id: string; name: string; owner: string; fixed: boolean }>, section: RefOption["section"], own: boolean, limit: number) => {
               const picked = xs
                 .filter((w) => !seen.has(w.id) && matches(w.name, q))
                 .sort((a, b) => rank(a.name, q) - rank(b.name, q) || a.name.localeCompare(b.name))
                 .slice(0, limit);
               for (const w of picked) {
                 seen.add(w.id);
-                out.push({ id: w.id, name: w.name, owner: own ? null : w.owner, section });
+                out.push({ id: w.id, name: w.name, owner: own ? null : w.owner, section, fixed: w.fixed });
               }
             };
             push(mine, "mine", true, 30);

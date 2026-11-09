@@ -4,6 +4,7 @@ export * from "./schema.ts";
 export * from "./parser.ts";
 export * from "./expand.ts";
 export { escapeText, promptTag } from "./tagtext.ts";
+export { isFixedDoc, type FixedDocLike } from "./fixed.ts";
 export { IMPACT_SIZE_WARN, toImpactPrompt, type ImpactResult, type ImpactWarning, type ImpactWarningCode } from "./export.ts";
 export { cleanup, cleanupWithMap, isSpecWhitespace, trimSpecWhitespace, type CleanupResult } from "./cleanup.ts";
 export { bounded, derive, fnv1a64, H, mix64, sampleWithoutReplacement, SplitMix64 } from "./random.ts";

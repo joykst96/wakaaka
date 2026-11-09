@@ -25,6 +25,8 @@ function withViewer(db: Db, viewerId: string | null) {
 export interface ExploreQuery {
   q: string | null;
   cats: number[];
+  /** true 고정만, false 고정 빼고, null 전부 */
+  fixed: boolean | null;
   sort: "popular" | "recent";
   offset: number;
   limit: number;
@@ -53,6 +55,7 @@ export async function explore(db: Db, x: ExploreQuery): Promise<CardRow[]> {
     q = q.where((eb) => eb.or([eb("w.name", "ilike", pattern), eb("w.description", "ilike", pattern)]));
   }
   if (x.cats.length > 0) q = q.where(sql<boolean>`w.categories && ${x.cats}::smallint[]`);
+  if (x.fixed !== null) q = q.where("w.fixed", "=", x.fixed);
   q = x.sort === "popular" ? q.orderBy("w.like_count", "desc").orderBy("w.id") : q.orderBy("v.created_at", "desc").orderBy("w.id");
   return q.limit(x.limit).offset(x.offset).execute();
 }

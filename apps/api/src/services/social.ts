@@ -34,6 +34,8 @@ export const exploreQuerySchema = z.strictObject({
   cat: z.string().regex(/^[0-9]{1,2}(,[0-9]{1,2}){0,12}$/).optional(),
   sort: z.enum(["popular", "recent"]).optional(),
   offset: z.string().regex(/^[0-9]{1,5}$/).optional(),
+  /** 1 고정만, 0 고정 빼고 (DESIGN 3절 "고정 표시") */
+  fixed: z.enum(["1", "0"]).optional(),
 });
 
 export async function explore(db: Db, viewer: Owner | null, query: Record<string, string>) {
@@ -50,7 +52,8 @@ export async function explore(db: Db, viewer: Owner | null, query: Record<string
   const offset = x.offset === undefined ? 0 : Number(x.offset);
   if (offset > EXPLORE_MAX_OFFSET) throw new ApiError(400, "E_QUERY", `offset must be at most ${EXPLORE_MAX_OFFSET}`);
   // 한 개 더 읽어 다음 쪽이 있는지 안다
-  const rows = await repo.explore(db, { q, cats, sort: x.sort ?? "popular", offset, limit: EXPLORE_PAGE + 1, viewerId: viewer?.id ?? null });
+  const fixed = x.fixed === undefined ? null : x.fixed === "1";
+  const rows = await repo.explore(db, { q, cats, fixed, sort: x.sort ?? "popular", offset, limit: EXPLORE_PAGE + 1, viewerId: viewer?.id ?? null });
   const more = rows.length > EXPLORE_PAGE;
   return { wildcards: rows.slice(0, EXPLORE_PAGE).map(cardView), nextOffset: more ? offset + EXPLORE_PAGE : null };
 }

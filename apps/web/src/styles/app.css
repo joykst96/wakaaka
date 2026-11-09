@@ -366,6 +366,22 @@ body,
   font: var(--font-heading);
   overflow-wrap: anywhere;
 }
+/* 고정 배지: 보라 원 안의 F (DESIGN 11절). 글자는 원 정중앙(grid). 굵기는 2층에 "작은 글자 + 굵게" 역할이 없어 bolder */
+.fixed-badge {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--fixed-badge-size);
+  height: var(--fixed-badge-size);
+  border-radius: var(--fixed-badge-radius);
+  background: var(--fixed-badge-bg);
+  color: var(--fixed-badge-fg);
+  font: var(--fixed-badge-font);
+  font-weight: bolder;
+  align-self: center; /* 카드 머리줄은 baseline 정렬이라 원만 가운데로 */
+  user-select: none;
+  cursor: default;
+}
 .card-likes {
   margin-left: auto;
   color: var(--color-fg-muted);

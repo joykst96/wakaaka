@@ -10,6 +10,7 @@ import { useSession } from "../app/session.tsx";
 import type { WildcardMeta } from "../lib/api.ts";
 import { loadFlag, saveFlag } from "../lib/drafts.ts";
 import { groupByFolder, loadCollapsed, saveCollapsed } from "../lib/folders.ts";
+import { FixedBadge } from "./FixedBadge.tsx";
 import { useFolderTools } from "./FolderTools.tsx";
 
 export function Sidebar({ onNavigate }: { onNavigate?(): void }) {
@@ -44,6 +45,7 @@ export function Sidebar({ onNavigate }: { onNavigate?(): void }) {
     <li key={w.id} data-drag={w.id} data-folder-menu={"wildcard:" + w.id} className={tools.dragging?.includes(w.id) ? "is-dragged" : undefined}>
       <Link to={{ name: "wildcard", id: w.id }} className={"sidebar-item" + (w.id === current ? " is-current" : "")}>
         <span className="sidebar-name">{w.name}</span>
+        {w.fixed && <FixedBadge />}
         {w.forkedFrom && <span className="sidebar-origin">· {w.forkedFrom.owner ?? "가져옴"}</span>}
       </Link>
     </li>
@@ -128,6 +130,7 @@ export function Sidebar({ onNavigate }: { onNavigate?(): void }) {
               <li key={w.id}>
                 <Link to={{ name: "wildcard", id: w.id }} className={"sidebar-item" + (w.id === current ? " is-current" : "")}>
                   <span className="sidebar-name">{w.name}</span>
+                  {w.fixed && <FixedBadge />}
                   <span className="sidebar-origin">· {w.owner}</span>
                 </Link>
               </li>

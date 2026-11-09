@@ -3,6 +3,7 @@
 
 import { Kysely, sql } from "kysely";
 import { Migrator, type Migration } from "kysely/migration";
+import { isFixedDoc, type Doc } from "@wakaaka/core";
 
 const m0001: Migration = {
   async up(db: Kysely<any>) {
@@ -248,6 +249,31 @@ const m0008: Migration = {
   },
 };
 
+// 고정 표시(DESIGN 3절 "고정 표시", 사용자 결정 2026-11-09). 최신 버전 문서로 계산해 둔다(목록 쿼리는 문서를 읽지 않는다).
+// 판정은 문법 파서가 필요해 SQL로 못 하므로 이미 있는 행은 여기서 core isFixedDoc으로 채운다. 지운 와일드카드도 채운다.
+// 1,000개씩 ID 순으로 끊어 읽는다. 마이그레이션 코드는 고치지 않으므로 판정이 바뀌면 다음 번호로 다시 채운다.
+const m0009: Migration = {
+  async up(db: Kysely<any>) {
+    await db.schema.alterTable("wildcard").addColumn("fixed", "boolean", (c) => c.notNull().defaultTo(false)).execute();
+    let after = "";
+    for (;;) {
+      const rows = await db
+        .selectFrom("wildcard as w")
+        .innerJoin("wc_version as v", (j) => j.onRef("v.wildcard_id", "=", "w.id").onRef("v.seq", "=", "w.latest_seq"))
+        .innerJoin("wc_content as c", "c.hash", "v.hash")
+        .select(["w.id", "c.doc"])
+        .where("w.id", ">", after)
+        .orderBy("w.id")
+        .limit(1000)
+        .execute();
+      if (rows.length === 0) break;
+      const fixed = rows.filter((r) => isFixedDoc(r.doc as Doc)).map((r) => r.id as string);
+      if (fixed.length > 0) await db.updateTable("wildcard").set({ fixed: true }).where("id", "in", fixed).execute();
+      after = rows[rows.length - 1]!.id as string;
+    }
+  },
+};
+
 export const migrations: Record<string, Migration> = {
   "0001_init": m0001,
   "0002_social": m0002,
@@ -257,6 +283,7 @@ export const migrations: Record<string, Migration> = {
   "0006_tag_keyword_post_count": m0006,
   "0007_folders": m0007,
   "0008_folder_position": m0008,
+  "0009_fixed": m0009,
 };
 
 /**

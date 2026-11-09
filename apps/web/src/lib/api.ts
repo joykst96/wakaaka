@@ -60,6 +60,8 @@ export interface WildcardMeta {
   likes: number;
   description: string;
   example: string | null;
+  /** 최신 버전이 고정인지 (DESIGN 3절 "고정 표시") */
+  fixed: boolean;
   forkedFrom: { wildcard: string; hash: string; owner: string | null } | null;
   createdAt: string;
   updatedAt: string;
@@ -137,11 +139,13 @@ export const api = {
   favorites: () => call<{ favorites: Card[] }>("GET", "/api/favorites"),
   favorite: (id: string, on: boolean) =>
     on ? call<{ favorited: boolean }>("POST", "/api/favorites", { wildcard: id }) : call<{ favorited: boolean }>("DELETE", `/api/favorites/${enc(id)}`),
-  explore: (p: { q?: string; cat?: number[]; sort?: "popular" | "recent"; offset?: number }) => {
+  /** fixed: true 고정만, false 고정 빼고, 생략·null 전부 */
+  explore: (p: { q?: string; cat?: number[]; sort?: "popular" | "recent"; fixed?: boolean | null; offset?: number }) => {
     const qs = new URLSearchParams();
     if (p.q) qs.set("q", p.q);
     if (p.cat && p.cat.length > 0) qs.set("cat", p.cat.join(","));
     if (p.sort) qs.set("sort", p.sort);
+    if (p.fixed === true || p.fixed === false) qs.set("fixed", p.fixed ? "1" : "0");
     if (p.offset) qs.set("offset", String(p.offset));
     const s = qs.toString();
     return call<{ wildcards: Card[]; nextOffset: number | null }>("GET", "/api/explore" + (s ? "?" + s : ""));

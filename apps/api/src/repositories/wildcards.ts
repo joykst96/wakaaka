@@ -20,6 +20,8 @@ export interface WildcardRow {
   forked_from_owner: string | null;
   description: string;
   example: string | null;
+  /** 최신 버전이 고정인지 (DESIGN 3절 "고정 표시") */
+  fixed: boolean;
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;
@@ -46,6 +48,7 @@ export function wildcardQuery(db: Db) {
       "fo.username as forked_from_owner",
       "w.description",
       "w.example",
+      "w.fixed",
       "w.created_at",
       "v.created_at as updated_at",
       "w.deleted_at",
@@ -161,7 +164,7 @@ export async function insertRefs(db: Db, hash: string, refs: ReadonlyArray<{ ite
 
 export async function insertWildcard(
   db: Db,
-  w: { id: string; ownerId: string; name: string; description: string; categories: number[]; forkedFrom: { wildcard: string; hash: string } | null },
+  w: { id: string; ownerId: string; name: string; description: string; fixed: boolean; categories: number[]; forkedFrom: { wildcard: string; hash: string } | null },
 ): Promise<void> {
   await db
     .insertInto("wildcard")
@@ -170,6 +173,7 @@ export async function insertWildcard(
       owner_id: w.ownerId,
       name: w.name,
       description: w.description,
+      fixed: w.fixed,
       latest_seq: 0,
       categories: w.categories,
       forked_from_wildcard: w.forkedFrom?.wildcard ?? null,
@@ -184,12 +188,12 @@ export async function appendVersion(
   db: Db,
   id: string,
   hash: string,
-  meta: { name: string; description: string },
+  meta: { name: string; description: string; fixed: boolean },
   categories: number[] | undefined,
 ): Promise<number> {
   const { latest_seq } = await db
     .updateTable("wildcard")
-    .set((eb) => ({ latest_seq: eb("latest_seq", "+", 1), name: meta.name, description: meta.description, ...(categories ? { categories } : {}) }))
+    .set((eb) => ({ latest_seq: eb("latest_seq", "+", 1), name: meta.name, description: meta.description, fixed: meta.fixed, ...(categories ? { categories } : {}) }))
     .where("id", "=", id)
     .returning("latest_seq")
     .executeTakeFirstOrThrow();

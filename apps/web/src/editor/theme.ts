@@ -68,6 +68,22 @@ export const wakaakaTheme = EditorView.theme({
   ".cm-completionDetail": { color: "var(--editor-completion-detail)", fontStyle: "normal", marginLeft: "var(--editor-completion-detail-gap)" },
   ".cm-completionMatchedText": { textDecoration: "none", color: "var(--color-accent)" },
 
+  // 참조 후보의 고정 배지: 앱의 .fixed-badge와 같은 토큰(사용자 정의 속성은 그림자 경계를 넘어 상속된다)
+  ".wk-fixed-badge": {
+    display: "inline-grid",
+    placeItems: "center",
+    verticalAlign: "middle",
+    width: "var(--fixed-badge-size)",
+    height: "var(--fixed-badge-size)",
+    marginRight: "var(--editor-completion-detail-gap)",
+    borderRadius: "var(--fixed-badge-radius)",
+    background: "var(--fixed-badge-bg)",
+    color: "var(--fixed-badge-fg)",
+    font: "var(--fixed-badge-font)",
+    fontWeight: "bolder",
+  },
+  ".wk-fixed-space": { background: "none" },
+
   // 태그 후보: 이름은 분류 색, 뒤에 포스트 수와 한국어 설명 한 줄. 선택하면 옆에 설명 상자
   ".wk-tag-0 .cm-completionLabel, .wk-tag-info-title.wk-tag-0": { color: "var(--tag-general)" },
   ".wk-tag-1 .cm-completionLabel, .wk-tag-info-title.wk-tag-1": { color: "var(--tag-artist)" },

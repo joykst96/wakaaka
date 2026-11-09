@@ -45,6 +45,8 @@ export interface WildcardTable {
   example: ColumnType<string | null, string | null | undefined, string | null>;
   /** 0007. 나만 보는 폴더(DESIGN 11절 "폴더"). NULL = 폴더 없음. 공개 응답에는 넣지 않는다 */
   folder_id: ColumnType<string | null, string | null | undefined, string | null>;
+  /** 0009. 최신 버전이 고정인지(DESIGN 3절 "고정 표시", core isFixedDoc). 저장할 때 계산한다 */
+  fixed: Generated<boolean>;
   created_at: Generated<Date>;
   deleted_at: Date | null;
 }

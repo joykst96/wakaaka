@@ -1,8 +1,9 @@
-// 둘러보기 (DESIGN 11절): 검색창, 분류 칩, 인기순(기본)·최신순, 카드 목록. 로그인 없이 보인다. 가져온 복사본은 API가 뺀다.
+// 둘러보기 (DESIGN 11절): 검색창, 분류 칩, 인기순(기본)·최신순, 고정 필터(전체·고정만·고정 빼고), 카드 목록. 로그인 없이 보인다. 가져온 복사본은 API가 뺀다.
 
 import { useEffect, useState } from "react";
 import { primeMeta } from "../app/cache.ts";
 import { Link } from "../app/router.tsx";
+import { FixedBadge } from "../components/FixedBadge.tsx";
 import { api, type Card } from "../lib/api.ts";
 import { CATEGORIES, categoryLabel } from "../lib/categories.ts";
 
@@ -11,6 +12,8 @@ export function ExplorePage() {
   const [query, setQuery] = useState("");
   const [cats, setCats] = useState<number[]>([]);
   const [sort, setSort] = useState<"popular" | "recent">("popular");
+  /** 고정 필터: null 전체, true 고정만, false 고정 빼고 (DESIGN 11절 "고정 배지") */
+  const [fixed, setFixed] = useState<boolean | null>(null);
   const [cards, setCards] = useState<Card[] | null>(null);
   const [next, setNext] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +27,7 @@ export function ExplorePage() {
     setCards(null);
     setError(null);
     api
-      .explore({ q: query, cat: cats, sort })
+      .explore({ q: query, cat: cats, sort, fixed })
       .then((r) => {
         if (!live) return;
         primeMeta(r.wildcards);
@@ -35,11 +38,11 @@ export function ExplorePage() {
     return () => {
       live = false;
     };
-  }, [query, cats, sort]);
+  }, [query, cats, sort, fixed]);
 
   const more = async () => {
     if (next === null) return;
-    const r = await api.explore({ q: query, cat: cats, sort, offset: next });
+    const r = await api.explore({ q: query, cat: cats, sort, fixed, offset: next });
     primeMeta(r.wildcards);
     setCards((c) => [...(c ?? []), ...r.wildcards]);
     setNext(r.nextOffset);
@@ -56,6 +59,18 @@ export function ExplorePage() {
           </button>
           <button type="button" className="chip" aria-pressed={sort === "recent"} onClick={() => setSort("recent")}>
             최신순
+          </button>
+        </div>
+        <div className="chip-group" role="group" aria-label="고정">
+          <button type="button" className="chip" aria-pressed={fixed === null} onClick={() => setFixed(null)}>
+            전체
+          </button>
+          <button type="button" className="chip" aria-pressed={fixed === true} onClick={() => setFixed(true)}>
+            <FixedBadge decorative />
+            고정만
+          </button>
+          <button type="button" className="chip" aria-pressed={fixed === false} onClick={() => setFixed(false)}>
+            고정 빼고
           </button>
         </div>
       </div>
@@ -88,6 +103,7 @@ export function CardGrid({ cards, showOrigin }: { cards: Card[]; showOrigin?: bo
             <Link to={{ name: "wildcard", id: c.id }} className="card-name">
               {c.name}
             </Link>
+            {c.fixed && <FixedBadge />}
             <span className="card-likes" title="좋아요">
               {c.liked ? "♥" : "♡"} {c.likes}
             </span>

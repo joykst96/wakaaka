@@ -170,6 +170,14 @@
   --card-example-padding: var(--space-1) var(--space-2);
   --card-border-hover: var(--color-accent);
 
+  /* ---------------- 고정 배지 (DESIGN 11절 "고정 배지") ---------------- */
+  /* 보라는 상태색·분류 칩에 안 쓰는 라벨 색. 글자는 on-accent(라이트 흰색, 다크 진한 회색)와 짝이 맞는다 */
+  --fixed-badge-size: var(--space-4);
+  --fixed-badge-radius: var(--radius-full);
+  --fixed-badge-bg: var(--color-label-purple);
+  --fixed-badge-fg: var(--color-on-accent);
+  --fixed-badge-font: var(--font-caption);
+
   /* ---------------- 문법 가이드 ---------------- */
   --guide-width: var(--size-container-sm);
   --guide-output-bg: var(--color-bg-sunken);

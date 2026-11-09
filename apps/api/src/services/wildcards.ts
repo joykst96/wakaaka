@@ -1,6 +1,6 @@
 // 와일드카드 생성, 새 버전, 삭제, 가져오기 (DESIGN 2절, 5절). 쓰기는 모두 트랜잭션 안에서 소유자를 잠그고 한다.
 
-import { expand } from "@wakaaka/core";
+import { expand, isFixedDoc, type Doc } from "@wakaaka/core";
 import { z } from "zod";
 import type { Db } from "../db/connect.ts";
 import { ApiError } from "../http.ts";
@@ -52,7 +52,8 @@ async function refreshExamples(tx: Db, id: string): Promise<void> {
   }
 }
 
-const metaOf = (p: { name: string; doc: { description?: string } }) => ({ name: p.name, description: p.doc.description ?? "" });
+/** 최신 버전을 따르는 와일드카드 행 값: 이름, 설명, 고정 표시(DESIGN 3절) */
+const metaOf = (p: { name: string; doc: Doc }) => ({ name: p.name, description: p.doc.description ?? "", fixed: isFixedDoc(p.doc) });
 
 function nameTaken(e: unknown): boolean {
   const err = e as { code?: string; constraint?: string };
@@ -146,6 +147,7 @@ export function wildcardView(w: repo.WildcardRow) {
     likes: w.like_count,
     description: w.description,
     example: w.example,
+    fixed: w.fixed,
     forkedFrom: w.forked_from_wildcard ? { wildcard: w.forked_from_wildcard, hash: w.forked_from_hash, owner: w.forked_from_owner } : null,
     createdAt: w.created_at.toISOString(),
     updatedAt: w.updated_at.toISOString(),

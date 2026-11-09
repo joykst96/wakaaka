@@ -1,7 +1,7 @@
 // 와일드카드 상세 (DESIGN 11절): 내 것이면 편집기, 남의 것(또는 내 것의 옛 버전)이면 읽기 전용 보기.
 // 가운데: 이름·분류·설명·상태, 개수·구분자·보기 전환, 목록 보기/텍스트 보기. 오른쪽: 미리보기, 사용하는 것, 사용되는 곳, 버전 이력.
 
-import type { SourceRange } from "@wakaaka/core";
+import { isFixedDoc, type SourceRange } from "@wakaaka/core";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { getBundle, getMeta, invalidate, primeMeta, requestMeta, useMetaVersion } from "../app/cache.ts";
 import { Link, navigate, navigateBack } from "../app/router.tsx";
@@ -9,6 +9,7 @@ import { useTabs } from "../app/tabs.tsx";
 import { keyOf, type TabKey } from "../lib/tabs.ts";
 import { useSession } from "../app/session.tsx";
 import { ImportDialog, PickRefDialog } from "../components/Dialogs.tsx";
+import { FixedBadge } from "../components/FixedBadge.tsx";
 import { GuideButton } from "../components/Guide.tsx";
 import { useToast } from "../components/Toast.tsx";
 import type { RefOption } from "../editor/cm.ts";
@@ -144,6 +145,8 @@ function Editor({ detail, tabKey, active, onPickVersion }: { detail: WildcardDet
   /** 텍스트 보기면 그 내용을 항목으로 바꾼 문서 */
   const effective = useMemo((): EditDoc => (mode === "text" ? { ...doc, items: textItems(text, deterministicRandom()).items } : doc), [doc, mode, text, textItems]);
   const dirty = !sameDoc(effective, base.doc) || !sameCats(categories, base.categories);
+  /** 편집 중인 내용이 고정인지 (DESIGN 3절 "고정 표시"). 이름 참조도 참조로 본다 */
+  const fixed = useMemo(() => isFixedDoc(toDoc(effective), "edit"), [effective]);
   // 탭에 저장 안 함(●)을 알린다. 닫을 때 묻는 것과 페이지를 떠날 때 경고는 탭이 한다
   useEffect(() => tabs.setDirty(tabKey, dirty), [dirty, tabKey, tabs.setDirty]);
   useEffect(() => () => tabs.setDirty(tabKey, false), [tabKey, tabs.setDirty]);
@@ -335,6 +338,7 @@ function Editor({ detail, tabKey, active, onPickVersion }: { detail: WildcardDet
             <span className={dirty ? "text-warning" : "text-muted"}>
               {id ? `v${base.seq}` : "새 와일드카드"} · {dirty ? "저장 안 됨" : "저장됨"}
             </span>
+            {fixed && <FixedBadge />}
             {id && <CopyId id={id} />}
             <button type="button" className="btn btn-sm" onClick={() => void save()} disabled={saving} title="Ctrl+S">
               {saving ? "저장 중…" : "저장"}
@@ -597,6 +601,7 @@ function ReadOnly({ detail, mine, onPickVersion }: { detail: WildcardDetail; min
                 </>
               )}
             </span>
+            {isFixedDoc(detail.doc) && <FixedBadge />}
           </div>
         </div>
         <div className="readonly-actions">
