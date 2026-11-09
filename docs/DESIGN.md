@@ -370,7 +370,9 @@ SELECT d.wildcard_id, d.hash, c.doc FROM deps d JOIN wc_content c USING (hash); 
   - 태그 분류 색(Phase 5, 사용자 결정 2026-11-04): 공용 저장소 2층에 의미 없는 분류용 라벨 색 `--color-label-{blue,red,purple,green,orange}`(텍스트, 배경 위 4.5:1 이상)을 두고, 1층에는 보라·주황만 새로 넣는다(파랑·빨강·초록은 기존 1층 값). 앱 3층이 Danbooru 관례대로 잇는다: general 파랑, artist 빨강, copyright 보라, character 초록, meta 주황.
 - CodeMirror 테마도 `var(--...)`로 토큰을 참조한다. 그래야 다크/라이트와 밀도를 그대로 따라간다.
 - CodeMirror는 그림자 루트(ShadowRoot) 안에 띄운다. CodeMirror(style-mod)는 문서에는 `<style>` 태그로 스타일을 넣는데 CSP `default-src 'self'`가 그것을 막는다. 그림자 루트에서는 생성 스타일시트(adoptedStyleSheets)를 쓰고 이것은 CSP에 막히지 않는다(Phase 3 실측, `NOTES.md`). 그래서 편집기 모양은 CodeMirror 테마로만 정하고, 토큰은 사용자 정의 속성이 그림자 경계를 넘어 상속되는 것으로 받는다.
-- 기본은 다크이고, OS가 라이트면 라이트로 바뀐다(토큰 기본 동작). 레이아웃은 `--layout-sidebar-width`를 쓰고, 1280px 아래에서는 편집 화면의 오른쪽 패널을 편집기 아래로, 900px 아래에서는 사이드바까지 1단으로 바꾼다(11절).
+- 기본은 다크이고, OS가 라이트면 라이트로 바뀐다(토큰 기본 동작).
+  - **테마 전환 버튼**(사용자 요청 2026-11-09): 머리줄 맨 오른쪽에 해/달 아이콘 버튼. 지금 다크면 해(누르면 라이트), 라이트면 달(누르면 다크)을 보인다. 버튼 이름과 툴팁은 할 일("라이트 모드로 바꾸기"). 누르면 `<html data-theme>`를 바꾸고 이 브라우저에 기억한다(localStorage `wakaaka:theme` = `light`·`dark`). 기억한 값이 없으면 지금처럼 OS를 따르고, OS 설정이 바뀌면 바로 따라간다.
+  - 첫 화면 깜빡임을 막으려고 `index.html` 머리에서 `/theme.js`(일반 스크립트, `public/`)가 기억한 값을 먼저 적용한다. CSP `default-src 'self'`라 인라인 스크립트는 쓸 수 없다. CodeMirror(그림자 루트)도 `color-scheme`이 상속되어 같이 바뀐다. 레이아웃은 `--layout-sidebar-width`를 쓰고, 1280px 아래에서는 편집 화면의 오른쪽 패널을 편집기 아래로, 900px 아래에서는 사이드바까지 1단으로 바꾼다(11절).
 - `ui.css`(`.btn`, `.input`, `.chip`, `.panel`, `.popover`, `.dialog` 등)를 React 컴포넌트의 기반으로 쓴다. 컴포넌트에는 바깥 여백을 두지 않는다(토큰 레이아웃 규칙).
 
 ### 운영 배포 (Phase 6, 2026-11-04)

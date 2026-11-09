@@ -42,6 +42,12 @@ body,
   gap: var(--gap-xs);
   margin-left: auto;
 }
+/* 테마 전환 버튼: 아이콘만. 높이는 옆 버튼(btn-sm)과 같고 글자 대신 해/달 */
+.theme-icon {
+  display: block;
+  width: var(--theme-icon-size);
+  height: var(--theme-icon-size);
+}
 .app-nav a,
 .sidebar-actions a {
   text-decoration: none;

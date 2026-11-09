@@ -7,6 +7,7 @@ import { TabsProvider, useTabs } from "./app/tabs.tsx";
 import { GuideButton } from "./components/Guide.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { TabBar } from "./components/TabBar.tsx";
+import { ThemeToggle } from "./components/ThemeToggle.tsx";
 import { ToastProvider } from "./components/Toast.tsx";
 import { LoginPage, SettingsPage, SignupPage, UserPage } from "./pages/AccountPages.tsx";
 import { ExplorePage } from "./pages/ExplorePage.tsx";
@@ -91,6 +92,7 @@ function Shell() {
               </Link>
             </>
           )}
+          <ThemeToggle />
         </nav>
       </header>
       <div className={"app-body" + (drawer ? " drawer-open" : "")}>

@@ -35,6 +35,7 @@
   --wk-header-bg: var(--color-bg-surface);
   --wk-header-border: var(--color-border);
   --wk-header-padding: var(--inset-sm) var(--inset-md);
+  --theme-icon-size: var(--space-4); /* 머리줄 테마 전환 버튼의 해/달 (DESIGN 10절) */
   --wk-pane-gap: var(--layout-gap);
   --wk-pane-padding: var(--inset-md);
   --wk-sidebar-bg: var(--color-bg-surface);
