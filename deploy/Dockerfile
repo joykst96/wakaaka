@@ -15,6 +15,8 @@ RUN npm ci --no-audit --no-fund
 COPY packages/core/src packages/core/src
 COPY apps/web/index.html apps/web/vite.config.ts apps/web/tsconfig.json apps/web/
 COPY apps/web/src apps/web/src
+# public/은 vite가 dist/ 바로 아래로 그대로 복사한다(theme.js: 첫 화면 전 테마 적용, DESIGN 10절)
+COPY apps/web/public apps/web/public
 RUN npm run build -w @wakaaka/web
 
 # ---------------------------------------------------------------- 2. 실행
