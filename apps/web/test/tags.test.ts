@@ -2,7 +2,7 @@
 
 import { describe, expect, it, test } from "vitest";
 import { diagnose } from "../src/editor/syntax.ts";
-import { formatPostCount, lintCandidate, tagDisplayName, tagFragmentBefore, tagInsertText, tagLint, tagPieces, type TagLookup } from "../src/editor/tags.ts";
+import { formatPostCount, lintCandidate, tagDisplayName, tagFragmentBefore, tagInfoLines, tagInsertText, tagLint, tagNameOf, tagPieceAt, tagPieces, type TagLookup } from "../src/editor/tags.ts";
 
 describe("tagFragmentBefore: 자동완성이 뜨는 자리", () => {
   test.each([
@@ -131,5 +131,38 @@ describe("tagLint", () => {
     expect(diagnose("long_hair, {a|b", ctx).map((d) => d.severity)).toEqual(["error"]);
     // 남의 와일드카드 보기(mineIds null)에서는 검사하지 않는다
     expect(diagnose("long_hair", { mineIds: null, mineNames: null, extra: ctx.extra })).toEqual([]);
+  });
+});
+
+describe("태그 정보 호버: 조각 → 이름, 자리의 조각 (DESIGN 11절 \"태그 정보 호버\")", () => {
+  it("이름: 공백은 밑줄, \( \)는 풀고, 소문자. 밑줄·괄호가 없어도 이름이다(lint와 다름)", () => {
+    expect(tagNameOf("long hair")).toBe("long_hair");
+    expect(tagNameOf("1girl")).toBe("1girl");
+    expect(tagNameOf("Long  Hair")).toBe("long_hair");
+    expect(tagNameOf("hatsune miku \(cosplay\)")).toBe("hatsune_miku_(cosplay)");
+    expect(tagNameOf("hatsune miku (cosplay)")).toBe("hatsune_miku_(cosplay)");
+    expect(tagNameOf("^_^")).toBe("^_^");
+    expect(tagNameOf("x".repeat(257))).toBeNull();
+    expect(lintCandidate("long hair")).toBeNull(); // lint는 그대로: 밑줄·괄호가 있을 때만
+  });
+  it("자리: 쉼표·선택지·참조·바깥 표기가 경계, 조각 끝 바로 뒤도 그 조각", () => {
+    const t = "1girl, {red hair|blue eyes}, ${w:abc}, (smile:1.2)";
+    expect(tagPieceAt(t, 0)).toMatchObject({ from: 0, to: 5, name: "1girl" });
+    expect(tagPieceAt(t, 5)).toMatchObject({ name: "1girl" });
+    expect(tagPieceAt(t, 6)).toBeNull(); // 쉼표 뒤 공백
+    expect(tagPieceAt(t, t.indexOf("hair"))).toMatchObject({ name: "red_hair", inChoice: true });
+    expect(tagPieceAt(t, t.indexOf("eyes"))).toMatchObject({ name: "blue_eyes" });
+    expect(tagPieceAt(t, t.indexOf("abc"))).toBeNull();
+    expect(tagPieceAt(t, t.indexOf("smile") + 1)).toMatchObject({ name: "smile" });
+    expect(tagPieceAt("# long hair", 4)).toBeNull(); // 주석 항목
+  });
+  it("상자 줄: 한글 없는 본문은 빼고, 키워드는 있을 때만", () => {
+    expect(tagInfoLines({ name: "long_hair", category: 0, postCount: 1234567, body: "긴 머리", keywords: ["장발"] })).toEqual({
+      title: "long_hair",
+      sub: "general · 1,234,567",
+      body: "긴 머리",
+      keywords: "키워드: 장발",
+    });
+    expect(tagInfoLines({ name: "x", category: 9, postCount: 1, body: "english only", keywords: [] })).toEqual({ title: "x", sub: "9 · 1", body: null, keywords: null });
   });
 });

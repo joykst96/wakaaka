@@ -195,19 +195,33 @@ describe("자동완성: 입력 검증", () => {
   });
 });
 
-describe("이름 조회 (표기 lint용)", () => {
+describe("이름 조회 (표기 lint, 태그 정보 호버)", () => {
   beforeEach(async () => {
     await load();
   });
   it("있는 것만, 이름 순", async () => {
     const r = await anon.post("/api/tags/lookup", { names: ["long_hair", "nope", "^_^", "long_hair", "Long_hair"] });
     expect(r.status).toBe(200);
-    expect(r.body).toEqual({ tags: { "^_^": { category: 0, postCount: 1000 }, long_hair: { category: 0, postCount: 5000 } } });
+    expect(Object.keys(r.body.tags)).toEqual(["^_^", "long_hair"]);
+    expect(r.body.tags.long_hair).toMatchObject({ category: 0, postCount: 5000 });
+  });
+  it("정보는 자동완성 후보와 같다(본문 200자, 키워드)", async () => {
+    const long = "가".repeat(300);
+    await load([...BASE, `long_body,0,7,"[a > b] ${long}. 키워드: 길다"`], true);
+    const r = await anon.post("/api/tags/lookup", { names: ["long_hair", "^_^", "long_body"] });
+    for (const [q, name] of [["long_hair", "long_hair"], ["^_^", "^_^"], ["long_body", "long_body"]] as const) {
+      const s = (await suggest(q)).body.tags.find((t: { name: string }) => t.name === name);
+      expect(s).toBeDefined();
+      const { name: _n, ...info } = s;
+      expect(r.body.tags[name]).toEqual(info);
+    }
+    expect(r.body.tags.long_body.body.length).toBe(200);
+    expect(r.body.tags.long_hair.keywords.length).toBeGreaterThan(0);
   });
   it("__proto__ 이름, 개수·크기 상한, 스키마, SQL 문자열", async () => {
     await load(["__proto__,0,1,", "constructor,0,2,"], true);
     const r = await anon.post("/api/tags/lookup", { names: ["__proto__", "constructor"] });
-    expect(r.text).toBe('{"tags":{"__proto__":{"category":0,"postCount":1},"constructor":{"category":0,"postCount":2}}}');
+    expect(r.text).toBe('{"tags":{"__proto__":{"category":0,"postCount":1,"body":"","keywords":[]},"constructor":{"category":0,"postCount":2,"body":"","keywords":[]}}}');
     expect(({} as Record<string, unknown>).category).toBeUndefined();
     expect((await anon.post("/api/tags/lookup", { names: Array(201).fill("a") })).status).toBe(400);
     expect((await anon.post("/api/tags/lookup", { names: [""] })).status).toBe(400);

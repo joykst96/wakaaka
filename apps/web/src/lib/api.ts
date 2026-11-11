@@ -155,5 +155,5 @@ export const api = {
   bundle: (id: string) => call<BundleLike>("GET", `/api/w/${enc(id)}/bundle`),
 
   tagSuggest: (q: string) => call<{ tags: TagSuggestion[] }>("GET", `/api/tags/suggest?q=${enc(q)}`),
-  tagLookup: (names: string[]) => call<{ tags: Record<string, { category: number; postCount: number }> }>("POST", "/api/tags/lookup", { names }),
+  tagLookup: (names: string[]) => call<{ tags: Record<string, Omit<TagSuggestion, "name">> }>("POST", "/api/tags/lookup", { names }),
 };

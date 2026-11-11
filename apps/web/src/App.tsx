@@ -8,6 +8,7 @@ import { GuideButton } from "./components/Guide.tsx";
 import { Sidebar } from "./components/Sidebar.tsx";
 import { TabBar } from "./components/TabBar.tsx";
 import { ThemeToggle } from "./components/ThemeToggle.tsx";
+import { TagTipLayer } from "./components/TagHover.tsx";
 import { ToastProvider } from "./components/Toast.tsx";
 import { LoginPage, SettingsPage, SignupPage, UserPage } from "./pages/AccountPages.tsx";
 import { ExplorePage } from "./pages/ExplorePage.tsx";
@@ -17,6 +18,7 @@ import { WildcardPage } from "./pages/WildcardPage.tsx";
 export function App() {
   return (
     <ToastProvider>
+      <TagTipLayer />
       <SessionProvider>
         <TabsProvider>
           <Shell />

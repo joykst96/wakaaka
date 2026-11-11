@@ -1,9 +1,9 @@
 // 편집기 칸에 넘기는 바깥 상태: 오류 검사용 내 와일드카드, 칩 이름, `${` 자동완성 후보(내 것 → 즐겨찾기 → 둘러보기),
-// 쉼표 뒤 태그 자동완성과 태그 표기 lint.
+// 쉼표 뒤 태그 자동완성, 태그 표기 lint, 태그 정보 호버.
 
 import { useMemo } from "react";
 import { examplesOf, getMeta, requestMeta, useMetaVersion } from "../app/cache.ts";
-import { suggestTags, tagLookup } from "../app/tags.ts";
+import { suggestTags, tagInfo, tagLookup } from "../app/tags.ts";
 import { navigate } from "../app/router.tsx";
 import { useSession } from "../app/session.tsx";
 import { api, type Card } from "../lib/api.ts";
@@ -91,6 +91,7 @@ export function useEditorContext(o: EditorContextOptions): EditorContext {
           },
       onPickOther: o.onPickOther ?? (() => {}),
       tagOptions: o.readOnly ? null : suggestTags,
+      tagInfo,
     };
     // metaVersion: 칩 이름이 도착하면 다시 그린다.
     // 태그 조회(표기 lint)가 도착해도 컨텍스트는 바꾸지 않는다: 바꾸면 CodeMirror 설정을 다시 걸면서 열린 자동완성이 닫힌다(실측).

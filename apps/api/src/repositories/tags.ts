@@ -140,5 +140,6 @@ export async function suggestKoreanReference(db: Db, key: string, prefix: string
 
 export async function lookupNames(db: Db, names: readonly string[]) {
   if (names.length === 0) return [];
-  return db.selectFrom("tag").select(["name", "category", "post_count"]).where("name", "in", [...names]).execute();
+  const r = await sql<SuggestRow>`select ${COLS} from tag t where t.name = any(${[...names]}::text[])`.execute(db);
+  return r.rows;
 }

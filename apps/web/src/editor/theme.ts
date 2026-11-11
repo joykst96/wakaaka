@@ -101,6 +101,8 @@ export const wakaakaTheme = EditorView.theme({
     color: "var(--editor-completion-summary)",
   },
   ".cm-tooltip.cm-completionInfo": { padding: "var(--editor-tooltip-padding)", maxWidth: "var(--editor-tag-info-max-width)" },
+  // 태그 정보 호버: 자동완성 옆 상자와 같은 내용(cm.ts tagInfoDom)
+  ".cm-tooltip-hover .wk-tag-info": { padding: "var(--editor-tooltip-padding)", maxWidth: "var(--editor-tag-info-max-width)" },
   ".wk-tag-info-title": { font: "var(--font-label)" },
   ".wk-tag-info-sub": { color: "var(--color-fg-muted)" },
 

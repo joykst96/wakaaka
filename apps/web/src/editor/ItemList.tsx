@@ -11,6 +11,7 @@ import { ChoiceWeights } from "./ChoiceWeights.tsx";
 import { CmEditor } from "./CmEditor.tsx";
 import { RefChip, StaticText } from "./StaticText.tsx";
 import type { LintContext } from "./syntax.ts";
+import { TAG_HOVER_DELAY_EDITOR } from "./tags.ts";
 
 export interface ItemListProps {
   items: EditItem[];
@@ -181,7 +182,7 @@ export function ItemList({ items, onChange, context, lint, readOnly, highlight, 
                   onClick={readOnly ? undefined : () => setActive({ id: it.id, at: "end" })}
                   onFocus={readOnly ? undefined : () => setActive({ id: it.id, at: "end" })}
                 >
-                  <StaticText text={it.text ?? ""} lint={readOnly ? undefined : lint} />
+                  <StaticText text={it.text ?? ""} lint={readOnly ? undefined : lint} tagDelay={readOnly ? 0 : TAG_HOVER_DELAY_EDITOR} />
                 </div>
               )}
             </div>

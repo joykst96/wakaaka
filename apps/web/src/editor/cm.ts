@@ -11,7 +11,7 @@ import { FIXED_TITLE } from "../components/FixedBadge.tsx";
 import type { TagSuggestion } from "../lib/api.ts";
 import { linePrefixLength } from "../lib/textview.ts";
 import { diagnose, openRefBefore, tokenize, type LintContext } from "./syntax.ts";
-import { formatPostCount, TAG_CATEGORY_NAMES, tagDisplayName, tagFragmentBefore, tagInsertText } from "./tags.ts";
+import { formatPostCount, TAG_HOVER_DELAY_EDITOR, tagDisplayName, tagFragmentBefore, tagInfoLines, tagInsertText, tagPieceAt } from "./tags.ts";
 import { wakaakaTheme } from "./theme.ts";
 
 export interface ChipInfo {
@@ -49,6 +49,8 @@ export interface EditorContext {
   onPickOther(option: RefOption, from: number, to: number, target?: string): void;
   /** 쉼표 뒤 태그 자동완성 후보. null이면 자동완성 없음(읽기 전용) */
   tagOptions: ((query: string) => Promise<TagSuggestion[]>) | null;
+  /** 태그 정보 호버: 이름(Danbooru 표기)의 정보, 태그 DB에 없으면 null. 이 필드가 null이면 호버 없음 */
+  tagInfo: ((name: string) => Promise<TagSuggestion | null>) | null;
 }
 
 const noop = () => {};
@@ -62,6 +64,7 @@ export const editorContext = Facet.define<EditorContext, EditorContext>({
       refOptions: null,
       onPickOther: noop,
       tagOptions: null,
+      tagInfo: null,
     },
 });
 
@@ -308,38 +311,56 @@ interface TagCompletion extends Completion {
   tag: TagSuggestion;
 }
 const TAG_TYPE = "wk-tag-";
-const HANGUL = /[가-힣]/;
-
 /** 목록 칸의 짧은 한국어 설명: 한글 본문, 없으면 키워드 */
 function tagSummary(t: TagSuggestion): string {
-  if (HANGUL.test(t.body)) return t.body;
-  return t.keywords.join(", ");
+  return tagInfoLines(t).body ?? t.keywords.join(", ");
 }
 
-/** 선택한 후보 옆 설명 상자: 이름, 분류·포스트 수, 한국어 설명, 키워드 (글자는 모두 textContent) */
+/** 태그 설명 상자: 이름, 분류·포스트 수, 한국어 설명, 키워드 (글자는 모두 textContent). 자동완성 옆 상자와 태그 정보 호버가 같이 쓴다 */
 function tagInfoDom(t: TagSuggestion): HTMLElement {
+  const lines = tagInfoLines(t);
   const dom = document.createElement("div");
   dom.className = "wk-tag-info";
   const title = document.createElement("div");
   title.className = "wk-tag-info-title " + TAG_TYPE + t.category;
-  title.textContent = t.name;
+  title.textContent = lines.title;
   const sub = document.createElement("div");
   sub.className = "wk-tag-info-sub";
-  sub.textContent = `${TAG_CATEGORY_NAMES[t.category] ?? t.category} · ${t.postCount.toLocaleString("en-US")}`;
+  sub.textContent = lines.sub;
   dom.append(title, sub);
-  if (HANGUL.test(t.body)) {
+  if (lines.body !== null) {
     const d = document.createElement("div");
-    d.textContent = t.body;
+    d.textContent = lines.body;
     dom.append(d);
   }
-  if (t.keywords.length > 0) {
+  if (lines.keywords !== null) {
     const k = document.createElement("div");
     k.className = "wk-tag-info-sub";
-    k.textContent = "키워드: " + t.keywords.join(", ");
+    k.textContent = lines.keywords;
     dom.append(k);
   }
   return dom;
 }
+
+/** 태그 정보 호버 (DESIGN 11절): 태그 조각에 마우스가 멈추면 태그 DB에 있을 때만 설명 상자. 편집기는 늦게 띄운다 */
+const tagTooltip = (hoverTime: number) =>
+  hoverTooltip(
+    async (view, pos) => {
+      const tagInfo = view.state.facet(editorContext).tagInfo;
+      if (!tagInfo) return null;
+      const line = view.state.doc.lineAt(pos);
+      const skip = prefixLength(view, line.text);
+      if (pos - line.from < skip) return null;
+      const p = tagPieceAt(line.text.slice(skip), pos - line.from - skip);
+      if (!p) return null;
+      const info = await tagInfo(p.name);
+      if (!info) return null;
+      const base = line.from + skip;
+      return { pos: base + p.from, end: base + p.to, above: false, create: () => ({ dom: tagInfoDom(info) }) };
+    },
+    // 치거나 커서를 옮기면 닫는다(편집을 가리지 않게)
+    { hoverTime, hideOnChange: true },
+  );
 
 /** 쉼표 뒤 태그 자동완성 (DESIGN 11절). 영문·한국어로 찾고, 넣을 때 표기를 바꾼다(editor/tags.ts) */
 const tagCompletion: CompletionSource = async (cc: CompletionContext): Promise<CompletionResult | null> => {
@@ -403,7 +424,7 @@ export interface SetupOptions {
 }
 
 export function setup(o: SetupOptions): Extension[] {
-  const ext: Extension[] = [wakaakaTheme, syntaxPlugin, lintExtension, peekTooltip, history(), EditorView.lineWrapping, lineWeightPrefix.of(o.textView === true)];
+  const ext: Extension[] = [wakaakaTheme, syntaxPlugin, lintExtension, peekTooltip, tagTooltip(o.readOnly ? 0 : TAG_HOVER_DELAY_EDITOR), history(), EditorView.lineWrapping, lineWeightPrefix.of(o.textView === true)];
   if (o.placeholder) ext.push(cmPlaceholder(o.placeholder));
   if (o.readOnly) ext.push(EditorState.readOnly.of(true), EditorView.editable.of(false));
   else

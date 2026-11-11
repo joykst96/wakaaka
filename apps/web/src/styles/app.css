@@ -789,6 +789,49 @@ textarea.editor-desc {
   white-space: pre-wrap;
 }
 
+/* 태그 정보 호버 (DESIGN 11절): body에 고정 위치. 위치는 TagHover.tsx가 정한다. 마우스를 막지 않는다 */
+.tag-tip {
+  position: fixed;
+  z-index: var(--wk-z-popover);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-xs);
+  width: max-content;
+  max-width: var(--editor-tag-info-max-width);
+  padding: var(--editor-tooltip-padding);
+  border: var(--wk-border-width) solid var(--editor-tooltip-border);
+  border-radius: var(--wk-radius);
+  background: var(--editor-tooltip-bg);
+  box-shadow: var(--editor-tooltip-shadow);
+  color: var(--color-fg);
+  font: var(--font-body-sm);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+.tag-tip-title {
+  font: var(--font-label);
+}
+.tag-tip-sub,
+.tag-tip-note {
+  color: var(--color-fg-muted);
+}
+.tag-cat-0 {
+  color: var(--tag-general);
+}
+.tag-cat-1 {
+  color: var(--tag-artist);
+}
+.tag-cat-3 {
+  color: var(--tag-copyright);
+}
+.tag-cat-4 {
+  color: var(--tag-character);
+}
+.tag-cat-5 {
+  color: var(--tag-meta);
+}
+
 /* ---------------- 미리보기 ---------------- */
 .preview {
   display: flex;

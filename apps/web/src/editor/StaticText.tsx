@@ -5,8 +5,10 @@ import { useEffect, useState, type ReactNode } from "react";
 import { examplesOf, getMeta, useMetaVersion } from "../app/cache.ts";
 import { useTagVersion } from "../app/tags.ts";
 import { navigate } from "../app/router.tsx";
+import { TagHover } from "../components/TagHover.tsx";
 import { depthClass } from "./cm.ts";
 import { diagnose, tokenize, type ForeignKind, type LintContext } from "./syntax.ts";
+import { tagNameOf, tagPieces } from "./tags.ts";
 
 /** 바깥 표기에 마우스를 올리면 보이는 설명 */
 const FOREIGN_TITLE: Record<ForeignKind, string> = {
@@ -70,25 +72,49 @@ function Peek({ id }: { id: string }) {
   );
 }
 
-/** 항목 텍스트를 구문 색과 칩으로. lint가 있으면 첫 진단을 밑줄로 */
-export function StaticText({ text, lint, placeholder }: { text: string; lint?: LintContext; placeholder?: string }) {
+/**
+ * 항목 텍스트를 구문 색과 칩으로. lint가 있으면 첫 진단을 밑줄로.
+ * 태그 조각은 태그 정보 호버로 감싼다(tagDelay ms 뒤, DESIGN 11절). 조각 안의 진단 글은 title 대신 그 상자에 넣는다
+ */
+export function StaticText({ text, lint, placeholder, tagDelay = 0 }: { text: string; lint?: LintContext; placeholder?: string; tagDelay?: number }) {
   useTagVersion(); // 표기 lint용 태그 조회가 도착하면 다시 그린다
   if (text === "") return <span className="static-empty">{placeholder ?? "(빈 항목)"}</span>;
   const diags = lint ? diagnose(text, lint) : [];
   const toks = tokenize(text);
+  const pieces = tagPieces(text);
   const out: ReactNode[] = [];
   let at = 0;
-  const plain = (from: number, to: number) => {
-    if (from >= to) return;
-    // 진단 범위에 걸치면 밑줄
+  // 진단 범위에 걸치면 밑줄. inTag면 글을 title에 두지 않는다(태그 상자가 보인다)
+  const marked = (from: number, to: number, inTag: boolean): ReactNode[] => {
+    const xs: ReactNode[] = [];
     let i = from;
     while (i < to) {
       const d = diags.find((d) => d.from <= i && i < d.to);
       const next = d ? Math.min(to, d.to) : Math.min(to, ...diags.filter((d) => d.from > i).map((d) => d.from), to);
       const s = text.slice(i, next);
-      out.push(d ? <span key={out.length} className={`lint-${d.severity}`} title={d.message}>{s}</span> : s);
+      xs.push(d ? <span key={`m${i}`} className={`lint-${d.severity}`} title={inTag ? undefined : d.message}>{s}</span> : s);
       i = next;
     }
+    return xs;
+  };
+  // 토큰 사이 글. 태그 조각은 토큰을 넘지 않으므로 이 안에 다 들어 있다
+  const plain = (from: number, to: number) => {
+    if (from >= to) return;
+    let i = from;
+    for (const p of pieces) {
+      if (p.to <= from || p.from >= to) continue;
+      const name = tagNameOf(p.text);
+      if (name === null) continue;
+      if (i < p.from) out.push(...marked(i, p.from, false));
+      const notes = diags.filter((d) => d.from < p.to && p.from < d.to).map((d) => d.message);
+      out.push(
+        <TagHover key={`t${p.from}`} name={name} delay={tagDelay} note={notes.length > 0 ? notes.join(" / ") : undefined}>
+          {marked(p.from, p.to, true)}
+        </TagHover>,
+      );
+      i = p.to;
+    }
+    if (i < to) out.push(...marked(i, to, false));
   };
   for (const t of toks) {
     plain(at, t.from);

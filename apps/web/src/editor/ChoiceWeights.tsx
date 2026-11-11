@@ -5,6 +5,7 @@ import { useState } from "react";
 import { choicePercents, listChoices, parseWeightInput, setChoiceWeights } from "../lib/choices.ts";
 import { depthClass } from "./cm.ts";
 import { StaticText } from "./StaticText.tsx";
+import { TAG_HOVER_DELAY_EDITOR } from "./tags.ts";
 
 export function ChoiceWeights({ text, onChange, onClose }: { text: string; onChange(text: string): void; onClose(): void }) {
   const choices = listChoices(text);
@@ -52,7 +53,7 @@ export function ChoiceWeights({ text, onChange, onClose }: { text: string; onCha
                   return (
                     <tr key={ai}>
                       <td className="choice-weights-alt">
-                        <StaticText text={a.raw} placeholder="(빈 보기)" />
+                        <StaticText text={a.raw} placeholder="(빈 보기)" tagDelay={TAG_HOVER_DELAY_EDITOR} />
                       </td>
                       <td>
                         <input

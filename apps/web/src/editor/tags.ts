@@ -103,8 +103,35 @@ const UNESCAPED_PAREN = /(?<!\\)[()]/;
 /** 조각이 태그 DB의 이름일 수 있으면 그 이름(Danbooru 표기). 밑줄이나 이스케이프 안 된 괄호가 있을 때만 본다 */
 export function lintCandidate(piece: string): string | null {
   if (!piece.includes("_") && !UNESCAPED_PAREN.test(piece)) return null;
+  return tagNameOf(piece);
+}
+
+const HANGUL = /[가-힣]/;
+
+/** 태그 설명 상자(자동완성 옆 상자와 태그 정보 호버)의 줄: 이름, 분류 · 포스트 수, 한글이 있는 본문, 키워드 */
+export function tagInfoLines(t: { name: string; category: number; postCount: number; body: string; keywords: readonly string[] }) {
+  return {
+    title: t.name,
+    sub: `${TAG_CATEGORY_NAMES[t.category] ?? t.category} · ${t.postCount.toLocaleString("en-US")}`,
+    body: HANGUL.test(t.body) ? t.body : null,
+    keywords: t.keywords.length > 0 ? "키워드: " + t.keywords.join(", ") : null,
+  };
+}
+
+/** 태그 정보 호버의 편집기 지연(ms, DESIGN 11절 "태그 정보 호버"). 읽기 전용 보기와 둘러보기는 바로 띄운다 */
+export const TAG_HOVER_DELAY_EDITOR = 800;
+
+/** 조각 → 태그 DB 이름(Danbooru 표기): \( \)를 풀고 공백을 밑줄로, 소문자로. 이름이 될 수 없으면 null */
+export function tagNameOf(piece: string): string | null {
   const name = piece.replace(/\\([()])/g, "$1").replace(/\s+/g, "_").toLowerCase();
-  return name.length > 256 ? null : name;
+  return name === "" || name.length > 256 ? null : name;
+}
+
+/** 텍스트의 offset 자리에 있는 태그 조각과 그 이름(편집기 호버). 조각 끝 바로 뒤도 그 조각으로 본다 */
+export function tagPieceAt(text: string, offset: number): (TagPiece & { name: string }) | null {
+  const p = tagPieces(text).find((p) => p.from <= offset && offset <= p.to);
+  const name = p ? tagNameOf(p.text) : null;
+  return p && name !== null ? { ...p, name } : null;
 }
 
 export interface TagLookup {

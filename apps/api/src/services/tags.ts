@@ -99,10 +99,12 @@ export async function suggest(db: Db, query: Record<string, string>): Promise<{ 
 
 export const lookupBodySchema = z.strictObject({ names: z.array(z.string().min(1).max(256)).max(LOOKUP_NAMES_MAX) });
 
-/** 이름(Danbooru 표기, 밑줄)이 태그 DB에 있는지. 있는 것만 돌려준다 */
-export async function lookup(db: Db, names: string[]): Promise<{ tags: Record<string, { category: number; postCount: number }> }> {
+export type TagInfo = Omit<TagSuggestion, "name">;
+
+/** 이름(Danbooru 표기, 밑줄)이 태그 DB에 있는지와 그 정보(표기 lint, 태그 정보 호버). 있는 것만 돌려준다 */
+export async function lookup(db: Db, names: string[]): Promise<{ tags: Record<string, TagInfo> }> {
   if (!names.every(isSafeString)) throw new ApiError(400, "E_SCHEMA", "names contain characters that are not allowed");
   const rows = await repo.lookupNames(db, [...new Set(names)]);
   // fromEntries는 자기 속성으로 만든다. 이름이 __proto__여도 프로토타입을 바꾸지 않는다
-  return { tags: Object.fromEntries(rows.sort((a, b) => (a.name < b.name ? -1 : 1)).map((x) => [x.name, { category: x.category, postCount: x.post_count }])) };
+  return { tags: Object.fromEntries(rows.sort((a, b) => (a.name < b.name ? -1 : 1)).map((x) => [x.name, { category: x.category, postCount: x.post_count, body: x.body, keywords: x.keywords }])) };
 }

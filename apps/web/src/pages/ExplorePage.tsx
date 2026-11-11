@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { primeMeta } from "../app/cache.ts";
 import { Link } from "../app/router.tsx";
 import { FixedBadge } from "../components/FixedBadge.tsx";
+import { TagHoverText } from "../components/TagHover.tsx";
 import { api, type Card } from "../lib/api.ts";
 import { CATEGORIES, categoryLabel } from "../lib/categories.ts";
 
@@ -122,7 +123,8 @@ export function CardGrid({ cards, showOrigin }: { cards: Card[]; showOrigin?: bo
               ))}
             </div>
           )}
-          {c.example !== null && <p className="card-example" title="예시 출력 (seed 0)">{c.example === "" ? "(빈 결과)" : c.example}</p>}
+          {/* 태그 정보 호버와 겹치지 않게 title(예시 출력, seed 0)은 두지 않는다 */}
+          {c.example !== null && <p className="card-example">{c.example === "" ? "(빈 결과)" : <TagHoverText text={c.example} />}</p>}
         </li>
       ))}
     </ul>
