@@ -93,6 +93,35 @@
   border-color: var(--icon-button-border-hover);
 }
 
+/* ---------------- 테마 전환 버튼 ----------------
+   <button class="btn btn-ghost btn-sm theme-toggle" data-theme-toggle> 해 SVG(.theme-icon-sun) + 달 SVG(.theme-icon-moon) </button>
+   아이콘은 "누르면 될 것": 지금 다크면 해, 라이트면 달. 둘 다 넣어 두고 CSS가 고른다.
+   html의 data-theme(theme.js가 붙임), 없으면 OS 설정을 본다 — JS가 돌기 전에도 맞는 아이콘이 뜬다.
+   하위 트리의 data-theme이 아니라 :root를 보는 이유: 버튼이 바꾸는 것은 페이지 전체 테마다. */
+.theme-toggle svg {
+  display: block;
+  width: var(--theme-toggle-icon-size);
+  height: var(--theme-toggle-icon-size);
+  margin-block: calc(var(--theme-toggle-icon-bleed) * -1); /* 높이를 글자 .btn-sm과 같게 */
+}
+.theme-toggle .theme-icon-moon {
+  display: none;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .theme-toggle .theme-icon-sun {
+    display: none;
+  }
+  :root:not([data-theme="dark"]) .theme-toggle .theme-icon-moon {
+    display: block;
+  }
+}
+:root[data-theme="light"] .theme-toggle .theme-icon-sun {
+  display: none;
+}
+:root[data-theme="light"] .theme-toggle .theme-icon-moon {
+  display: block;
+}
+
 /* ---------------- 폼 ---------------- */
 .field {
   display: flex;
@@ -130,7 +159,9 @@
   color: var(--input-placeholder);
 }
 .input:focus-visible {
-  outline: none;
+  /* none이 아니라 투명 선으로 둔다. 고대비 모드(forced-colors)는 box-shadow를 지우고 테두리 색을 덮어쓰는데,
+     투명 outline은 시스템 색으로 바뀌어 포커스 표시가 남는다. */
+  outline: var(--focus-ring-width) solid transparent;
   border-color: var(--input-border-focus);
   box-shadow: var(--focus-halo);
 }
@@ -215,8 +246,8 @@ select.input {
   padding: var(--badge-padding-y) var(--badge-padding-x);
   border-radius: var(--badge-radius);
   font: var(--badge-font);
-  background: var(--color-bg-muted);
-  color: var(--color-fg-muted);
+  background: var(--badge-bg);
+  color: var(--badge-fg);
 }
 .badge-accent { background: var(--color-accent-subtle); color: var(--color-accent); }
 .badge-success { background: var(--color-success-subtle); color: var(--color-success); }

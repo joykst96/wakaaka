@@ -16,9 +16,17 @@
 
 :root,
 [data-density] {
+  /* ---------------- 컨트롤 공통 ----------------
+     한 줄짜리 컨트롤(버튼·입력창·셀렉트·아이콘 버튼)은 높이가 하나다. 나란히 놓아도 어긋나지 않는다.
+     높이 = 글자 한 줄(행간 1) + 위아래 여백 + 테두리 = 14 + 2×10 + 2 = 36 (촘촘 31 · 여유 41).
+     행간이 다른 컨트롤(입력창은 1.5)은 여백을 이 높이에서 거꾸로 계산한다. */
+  --control-padding-y: var(--space-2_5);
+  --control-height: calc(var(--font-size-base) + 2 * var(--control-padding-y) + 2 * var(--border-width-thin));
+  --control-border: var(--color-border-control);
+
   /* ---------------- 버튼 ---------------- */
   --button-font: var(--font-control);
-  --button-padding-y: var(--space-2_5);
+  --button-padding-y: var(--control-padding-y);
   --button-padding-x: var(--space-4);
   --button-gap: var(--gap-sm);
   --button-radius: var(--radius-lg);
@@ -37,7 +45,7 @@
   --button-ghost-bg-hover: var(--color-bg-muted);
   --button-ghost-bg-press: var(--color-bg-muted-press);
   --button-ghost-fg: var(--color-fg);
-  --button-ghost-border: var(--color-border-strong);
+  --button-ghost-border: var(--control-border);
 
   --button-danger-bg: var(--color-danger-solid);
   --button-danger-bg-hover: var(--color-danger-solid-hover);
@@ -57,24 +65,32 @@
   --icon-button-bg: var(--color-bg-sunken);
   --icon-button-fg: var(--color-fg-muted);
   --icon-button-fg-hover: var(--color-fg);
-  --icon-button-border: var(--color-border);
+  --icon-button-border: var(--control-border);
   --icon-button-border-hover: var(--color-accent);
   --icon-button-radius: var(--radius-md);
 
+  /* 테마 전환 버튼(.theme-toggle)의 해/달 아이콘. 버튼 모양은 .btn 변형을 그대로 쓴다.
+     아이콘은 글자 옆에 서므로 간격(밀도)이 아니라 글자 스케일을 따른다.
+     bleed: 아이콘이 글자(.btn-sm, 행간 1)보다 큰 만큼 위아래 여백으로 넘쳐 들어가게 해서
+     버튼 높이를 옆의 글자 .btn-sm과 같게 한다(16px 아이콘 → 30px가 아니라 26px). */
+  --theme-toggle-icon-size: var(--font-size-lg);
+  --theme-toggle-icon-bleed: calc((var(--theme-toggle-icon-size) - var(--font-size-sm)) / 2);
+
   /* ---------------- 입력창 (input/textarea/select) ---------------- */
   --input-font: var(--font-body);
-  --input-padding-y: var(--space-2);
+  /* 높이를 --control-height에 맞춘다: (높이 − 글자 줄 높이 − 테두리) ÷ 2 = (36 − 21 − 2) ÷ 2 = 6.5 */
+  --input-padding-y: calc((var(--control-height) - var(--font-size-base) * var(--line-height-normal) - 2 * var(--border-width-thin)) / 2);
   --input-padding-x: var(--space-2_5);
   --input-radius: var(--radius-md);
   --input-bg: var(--color-bg-sunken);
   --input-fg: var(--color-fg);
   --input-placeholder: var(--color-fg-subtle);
-  --input-border: var(--color-border);
+  --input-border: var(--control-border);
   --input-border-focus: var(--color-accent);
   --input-textarea-min-height: var(--space-16);
 
   /* 작은 입력: 라벨 줄 안에 들어가는 숫자 칸 등. 높이가 --field-label-height와 같다
-     (글자 sm × 행간 normal + 위아래 여백 + 테두리 = 12×1.5 + 2×2 + 2 = 24). */
+     (글자 sm × 행간 normal + 위아래 여백 + 테두리 = 12×1.5 + 2×2 + 2 = 24, 촘촘 23 · 여유 25). */
   --input-sm-font-size: var(--font-size-sm);
   --input-sm-padding-y: var(--space-0_5);
   --input-sm-padding-x: var(--space-1_5);
@@ -90,7 +106,9 @@
      그래서 라벨 글자와 그 아래 입력창 사이의 보이는 간격이 모든 필드에서 같다. */
   --label-font: var(--font-label);
   --label-fg: var(--color-fg-muted);
-  --field-label-height: var(--space-6);  /* 24 — 작은 입력·배지가 들어가도 늘지 않는 높이 */
+  /* 작은 입력(.input-sm)의 높이와 같은 식이다. 간격 배수(--space-6)로 두면 촘촘한 밀도에서 18로 줄어
+     작은 입력(23)·배지(19.5)가 줄을 밀어내고, 줄마다 높이가 달라진다. */
+  --field-label-height: calc(var(--font-size-sm) * var(--line-height-normal) + 2 * var(--input-sm-padding-y) + 2 * var(--border-width-thin)); /* 24 */
   --field-label-gap: var(--gap-md);      /* 라벨 줄 안 요소 사이 */
   --label-gap: var(--gap-xs);            /* 라벨 줄 ↔ 입력창 */
   --field-gap: var(--space-2_5);         /* 필드 ↔ 필드 (anima 실측 10) */
@@ -113,7 +131,7 @@
   --chip-radius: var(--radius-pill);
   --chip-bg: var(--color-bg-sunken);
   --chip-fg: var(--color-fg-muted);
-  --chip-border: var(--color-border);
+  --chip-border: var(--control-border);
   --chip-fg-hover: var(--color-fg);
   --chip-border-hover: var(--color-accent);
   --chip-bg-selected: var(--color-bg-selected);
@@ -125,6 +143,8 @@
   --badge-padding-y: var(--space-0_5);
   --badge-padding-x: var(--space-2);
   --badge-radius: var(--radius-pill);
+  --badge-bg: var(--color-bg-muted);
+  --badge-fg: var(--color-fg); /* fg-muted는 bg-muted 위에서 다크 4.30:1로 미달이다 */
 
   /* ---------------- 진행 바 ---------------- */
   --progress-height: var(--space-1_5);

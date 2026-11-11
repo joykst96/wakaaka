@@ -363,7 +363,7 @@ SELECT d.wildcard_id, d.hash, c.doc FROM deps d JOIN wc_content c USING (hash); 
 
 `joykst96/design-tokens`( 3층 토큰: 원시값 → 역할 → 컴포넌트)를 쓴다.
 
-- **가져오는 방식:** 그 저장소 README 방식대로 폴더째 `apps/web/src/design-tokens/`에 복사하고, 받아 온 커밋을 `SOURCE.md`에 적는다(현재 `62e4232`). Vite에서 `import "./design-tokens/tokens.css"`. 형제 경로를 참조하지 않는 이유는 서버 빌드가 wakaaka 폴더만 받기 때문이다. 복사는 Phase 3에서 웹을 만들 때 한다.
+- **가져오는 방식:** 그 저장소 README 방식대로 폴더째 `apps/web/src/design-tokens/`에 복사하고, 받아 온 커밋을 `SOURCE.md`에 적는다(현재 `2b37874`, 2026-11-11 갱신). Vite에서 `import "./design-tokens/tokens.css"`. 형제 경로를 참조하지 않는 이유는 서버 빌드가 wakaaka 폴더만 받기 때문이다. 복사는 Phase 3에서 웹을 만들 때 한다.
 - **앱 코드는 2층(역할) 토큰만 쓴다.** `scripts/check.mjs`로 앱 CSS를 검사해 날 값과 오타 토큰을 막는다(`npm run lint:css`).
 - **wakaaka 전용 컴포넌트 토큰**(편집기 구문 색, 참조 칩, 오류 밑줄, 의존 트리 등)은 앱 쪽 `styles/components.css`에 3층 규칙대로 둔다. 색과 글꼴은 2층만 참조한다. 2층에 없는 기하 스케일(라운드, 테두리 두께, 크기)만 1층 스케일 토큰을 참조할 수 있다(토큰 저장소 3층 규칙 "1·2층 참조", README "스케일은 앱이 쓰라고 둔 것"). 1층 팔레트 색은 쓰지 않는다. 앱 CSS(`app.css`)와 CodeMirror 테마는 2층과 이 앱 3층 토큰만 쓴다. `apps/web/scripts/lint-css.mjs`가 `check.mjs`와 함께 이 층 규칙을 검사한다(Phase 3). 공용 저장소는 범용으로 유지한다.
 - **새 색상이 필요한 경우**(예: Danbooru 태그 종류별 색)는 공용 저장소의 1·2층에 먼저 추가하고 다시 복사한다. 앱에서 hex를 만들지 않는다.

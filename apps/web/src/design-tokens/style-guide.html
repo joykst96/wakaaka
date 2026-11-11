@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Design Tokens</title>
+    <!-- 렌더 전에 기억한 테마 적용 (README "테마") -->
+    <script src="theme.js" data-key="design-tokens:theme"></script>
     <link rel="stylesheet" href="tokens.css" />
     <link rel="stylesheet" href="base.css" />
     <link rel="stylesheet" href="ui.css" />
@@ -170,6 +172,15 @@
             <button class="chip" data-v="dark" aria-pressed="false">다크</button>
             <button class="chip" data-v="light" aria-pressed="false">라이트</button>
           </div>
+          <button type="button" class="btn btn-ghost btn-sm theme-toggle" data-theme-toggle>
+            <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.5" />
+              <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" />
+            </svg>
+            <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z" />
+            </svg>
+          </button>
           <span class="label">밀도</span>
           <div class="chip-group" id="densityChips">
             <button class="chip" data-v="compact" aria-pressed="false">촘촘</button>
@@ -282,19 +293,30 @@
       const root = document.documentElement;
 
       // ---------- 토글 ----------
-      function bindChips(id, attr) {
-        const group = document.getElementById(id);
-        group.addEventListener("click", (e) => {
-          const chip = e.target.closest(".chip");
-          if (!chip) return;
-          for (const c of group.children) c.setAttribute("aria-pressed", String(c === chip));
-          if (chip.dataset.v) root.setAttribute(attr, chip.dataset.v);
-          else root.removeAttribute(attr);
-          if (attr === "data-density") renderScales();
-        });
-      }
-      bindChips("themeChips", "data-theme");
-      bindChips("densityChips", "data-density");
+      const pressChip = (group, v) => {
+        for (const c of group.children) c.setAttribute("aria-pressed", String(c.dataset.v === v));
+      };
+      // 테마: theme.js API로 바꾸고 기억한다. 칩은 themechange를 듣고 맞춘다(해/달 버튼으로 바꿔도 따라감)
+      const themeChips = document.getElementById("themeChips");
+      themeChips.addEventListener("click", (e) => {
+        const chip = e.target.closest(".chip");
+        if (!chip) return;
+        if (chip.dataset.v) colorTheme.set(chip.dataset.v);
+        else colorTheme.reset();
+      });
+      const syncThemeChips = () => pressChip(themeChips, colorTheme.saved() ?? "");
+      addEventListener("themechange", syncThemeChips);
+      syncThemeChips();
+      // 밀도: 이 페이지에서만 (기억하지 않음)
+      const densityChips = document.getElementById("densityChips");
+      densityChips.addEventListener("click", (e) => {
+        const chip = e.target.closest(".chip");
+        if (!chip) return;
+        pressChip(densityChips, chip.dataset.v);
+        if (chip.dataset.v) root.setAttribute("data-density", chip.dataset.v);
+        else root.removeAttribute("data-density");
+        renderScales();
+      });
 
       // ---------- 컴포넌트 데모 복제 ----------
       const tpl = document.getElementById("demoTpl");
@@ -357,32 +379,37 @@
         ["--color-fg-muted", "--color-bg-surface", 4.5],
         ["--color-fg-muted", "--color-bg-sunken", 4.5],
         ["--color-fg-subtle", "--color-bg-sunken", 3, null, "플레이스홀더 전용"],
-        ["--color-accent", "--color-bg-surface", 4.5],
-        ["--color-accent", "--color-bg-sunken", 4.5],
-        ["--color-success", "--color-bg-surface", 4.5],
-        ["--color-success", "--color-bg-sunken", 4.5],
-        ["--color-warning", "--color-bg", 4.5],
-        ["--color-warning", "--color-bg-sunken", 4.5],
-        ["--color-danger", "--color-bg-surface", 4.5],
-        ["--color-danger", "--color-bg-sunken", 4.5],
+        // 의도 색 글자: 세 바탕 × (그대로 · subtle · subtle-hover) 어디서나 4.5:1
+        ...["accent", "success", "warning", "danger"].flatMap((x) =>
+          ["--color-bg", "--color-bg-surface", "--color-bg-sunken"].flatMap((base) => [
+            [`--color-${x}`, base, 4.5],
+            [`--color-${x}`, `--color-${x}-subtle`, 4.5, base],
+            [`--color-${x}`, `--color-${x}-subtle-hover`, 4.5, base],
+          ]),
+        ),
         ...["blue", "red", "purple", "green", "orange"].flatMap((h) => [
+          [`--color-label-${h}`, "--color-bg", 4.5],
           [`--color-label-${h}`, "--color-bg-surface", 4.5],
           [`--color-label-${h}`, "--color-bg-sunken", 4.5],
           [`--color-label-${h}`, "--color-bg-selected", 4.5],
         ]),
         ["--color-on-accent", "--color-accent-solid", 4.5],
-        ["--color-on-accent", "--color-accent-solid-hover", 4.5],
-        ["--color-on-success", "--color-success-solid", 4.5],
-        ["--color-on-warning", "--color-warning-solid", 4.5],
-        ["--color-on-danger", "--color-danger-solid", 4.5],
-        ["--color-on-danger", "--color-danger-solid-hover", 4.5],
+        // 채움 위 글자: 기본 · hover · press 모두
+        ...["accent", "success", "warning", "danger"].flatMap((x) =>
+          ["", "-hover", "-press"].map((s) => [`--color-on-${x}`, `--color-${x}-solid${s}`, 4.5]),
+        ),
         ["--color-fg", "--color-bg-muted", 4.5],
         ["--color-fg", "--color-bg-muted-hover", 4.5],
+        ["--color-fg", "--color-bg-muted-press", 4.5],
         ["--color-fg", "--color-bg-selected", 4.5],
-        ["--color-accent", "--color-accent-subtle", 4.5, "--color-bg-surface"],
-        ["--color-success", "--color-success-subtle", 4.5, "--color-bg-surface"],
-        ["--color-warning", "--color-warning-subtle", 4.5, "--color-bg-surface"],
-        ["--color-danger", "--color-danger-subtle", 4.5, "--color-bg-surface"],
+        ["--color-fg-muted", "--color-bg-selected", 4.5],
+        ["--badge-fg", "--badge-bg", 4.5],
+        // 비텍스트(WCAG 1.4.11): 컨트롤 경계와 포커스 링은 인접 배경과 3:1
+        ...["--color-bg", "--color-bg-surface", "--color-bg-sunken"].flatMap((base) => [
+          ["--color-border-control", base, 3, null, "컨트롤 경계"],
+          ["--color-focus-ring", base, 3, null, "포커스 링"],
+        ]),
+        ["--color-accent", "--color-bg-selected", 3, null, "선택 칩 테두리"],
         ["--color-border-strong", "--color-bg-surface", 1.5, null, "장식선"],
       ];
       const short = (t) => t.replace("--color-", "");
