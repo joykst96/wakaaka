@@ -205,7 +205,7 @@ describe("둘러보기", () => {
   });
 
   it("잘못된 쿼리는 400", async () => {
-    for (const q of ["sort=hot", "sort=name", "sort=like_count%20desc", "cat=0", "cat=14", "cat=1;drop", "cat=", "offset=-1", "offset=10001", "offset=1e3", "page=2", "q=" + "a".repeat(101), "q=%00", "q=%1B"]) {
+    for (const q of ["sort=hot", "sort=name", "sort=like_count%20desc", "cat=0", "cat=15", "cat=1;drop", "cat=", "offset=-1", "offset=10001", "offset=1e3", "page=2", "q=" + "a".repeat(101), "q=%00", "q=%1B"]) {
       const r = await alice.get("/api/explore?" + q);
       expect(r.status, q).toBe(400);
       expect(r.body.error.code, q).toBe("E_QUERY");

@@ -86,7 +86,8 @@ function add(name: string, desc: string, categories: number[], tags: Tag[]) {
 
 // ---- 일반
 const a1 = read<{ canonical: Record<string, { categories: number[] }>; map: Record<string, string> }>("a1-major-map.json");
-const canonCats = (c: string) => (c === "동물" ? [8] : a1.canonical[c]!.categories); // 동물은 고정 분류 "사물"로(옛 생성기와 같게)
+// 동물은 고정 분류 "사물"로(옛 생성기와 같게). 성인은 상황·주제에 성인(14)을 더한다(DESIGN 10절, 2026-11-12)
+const canonCats = (c: string) => (c === "동물" ? [8] : c === "성인" ? [...a1.canonical[c]!.categories, 14].sort((x, y) => x - y) : a1.canonical[c]!.categories);
 const targetDesc = new Map<string, string>();
 const pairTarget = new Map<string, string>();
 for (const f of readdirSync(WORK).filter((f) => /^a2-out-\d+\.json$/.test(f))) {

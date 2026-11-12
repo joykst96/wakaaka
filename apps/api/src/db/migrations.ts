@@ -274,6 +274,20 @@ const m0009: Migration = {
   },
 };
 
+// 성인 분류 14(DESIGN 3절, 10절 "기본 와일드카드", 사용자 요청 2026-11-12). 이미 넣은 기본 와일드카드 중
+// 전용 계정 wakaaka의 `성인 > ` 이름에 14를 더한다(생성기 04-build.ts와 같은 결과 [11, 14]). 지운 것도 바꾼다.
+// 이미 14가 있으면 건너뛰어 여러 번 돌려도 같다. 남이 가져간 복사본은 그 사람 것이라 건드리지 않는다.
+const m0010: Migration = {
+  async up(db: Kysely<any>) {
+    await sql`
+      update wildcard w
+      set categories = array(select distinct c from unnest(w.categories || 14::smallint) c order by c)
+      from owner o
+      where o.id = w.owner_id and lower(o.username) = 'wakaaka' and w.name like '성인 > %' and not (14::smallint = any (w.categories))
+    `.execute(db);
+  },
+};
+
 export const migrations: Record<string, Migration> = {
   "0001_init": m0001,
   "0002_social": m0002,
@@ -284,6 +298,7 @@ export const migrations: Record<string, Migration> = {
   "0007_folders": m0007,
   "0008_folder_position": m0008,
   "0009_fixed": m0009,
+  "0010_adult_category": m0010,
 };
 
 /**

@@ -15,7 +15,8 @@ export interface Owner {
   username: string;
 }
 
-export const CATEGORY_MAX = 13;
+/** 고정 분류 ID 상한 (DESIGN 3절, 14 성인 2026-11-12). 목록은 웹 apps/web/src/lib/categories.ts */
+export const CATEGORY_MAX = 14;
 
 /** 생성·저장 요청 본문. owner_id, forked_from, latest_seq 같은 필드는 받지 않는다(모르는 필드는 거부) */
 export const saveBodySchema = z.strictObject({

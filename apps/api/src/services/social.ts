@@ -31,7 +31,7 @@ function parseQuery<T>(schema: z.ZodType<T>, value: unknown): T {
 /** /api/explore 쿼리. 모르는 매개변수는 거부한다 */
 export const exploreQuerySchema = z.strictObject({
   q: z.string().max(Q_MAX * 4).optional(),
-  cat: z.string().regex(/^[0-9]{1,2}(,[0-9]{1,2}){0,12}$/).optional(),
+  cat: z.string().regex(new RegExp(`^[0-9]{1,2}(,[0-9]{1,2}){0,${CATEGORY_MAX - 1}}$`)).optional(),
   sort: z.enum(["popular", "recent"]).optional(),
   offset: z.string().regex(/^[0-9]{1,5}$/).optional(),
   /** 1 고정만, 0 고정 빼고 (DESIGN 3절 "고정 표시") */
