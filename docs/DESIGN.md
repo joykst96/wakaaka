@@ -157,6 +157,9 @@ wildcard     (id CHAR(12) PK, owner_id, name /* UNIQUE(owner_id, lower(name)) WH
               categories SMALLINT[] /* 고정 분류, 중복 선택, GIN 색인. 버전이 아니라 와일드카드에 붙는다 */,
               forked_from_wildcard NULL, forked_from_hash NULL,
               folder_id NULL /* 0007. FK (owner_id, folder_id) → wc_folder (owner_id, id) ON DELETE SET NULL (folder_id) */,
+              description TEXT NOT NULL DEFAULT '' /* 0002. 최신 버전 문서의 description 사본. 검색용 trgm 색인 */,
+              example TEXT NULL /* 0002. 둘러보기 카드 예시 출력. 저장할 때 고정 seed로 계산, 전개 실패면 NULL */,
+              fixed BOOLEAN NOT NULL DEFAULT false /* 0009. 최신 버전 문서의 isFixedDoc 결과(3절 "고정 표시") */,
               created_at, deleted_at NULL)                               -- 바뀌는 별칭
 wc_version   (wildcard_id, seq, hash, created_at, PK(wildcard_id, seq))  -- 이력
 wc_ref       (src_hash, item_id, target_wildcard_id)                     -- 내용에서 파생. 참조는 항상 내 와일드카드
