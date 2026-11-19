@@ -236,6 +236,8 @@ describe("이름 조회 (표기 lint, 태그 정보 호버)", () => {
 
 // 새 CSV: WAKAAKA_TAGS_CSV, 없으면 data/의 mengod-hf 헤더 없는 형식. 옛 CSV: 저장소 옆 danbooru-tag/. 파일이 없으면 건너뛴다(DESIGN 6절)
 const NEW_CSV = process.env.WAKAAKA_TAGS_CSV ?? fileURLToPath(new URL("../../../data/danbooru-tags-kr-2026-11-04.csv", import.meta.url));
+// 2026-11-10부터 키워드 표기가 `<키워드> a, b.`로 바뀐 통합본. 없으면 건너뛴다
+const NEW_CSV_1110 = fileURLToPath(new URL("../../../data/danbooru-tags-kr-2026-11-10.csv", import.meta.url));
 const OLD_CSV = fileURLToPath(new URL("../../../../danbooru-tag/danbooru-tags.csv", import.meta.url));
 
 describe("헤더 없는 형식 가져오기", () => {
@@ -251,7 +253,40 @@ describe("헤더 없는 형식 가져오기", () => {
     expect(await names("long h")).toEqual(["long_hair"]);
     expect((await suggest("장발")).body.tags[0]).toEqual({ name: "long_hair", category: 0, postCount: 900, body: "긴 머리.", keywords: ["헤어스타일", "긴 머리", "장발"] });
   });
+  it("새 키워드 표기(2026-11-10부터)도 키워드로 읽어 한국어 검색에 쓴다", async () => {
+    const lines = [
+      'school uniform,0,500,"[패션 > 의상] 학생들이 입는 교복의 총칭임. <키워드> 교복, 학생복."',
+      'long hair,0,900,"[패션 > 헤어스타일] 긴 머리. <키워드> 헤어스타일, 긴 머리, 장발."',
+    ];
+    const r = await importTags(env.db, { fileName: "kr.csv", bytes: enc(lines.join("\n") + "\n") });
+    expect(r.stats).toMatchObject({ rows: 2, withKeywords: 2 });
+    expect(await names("학생복")).toEqual(["school_uniform"]);
+    expect((await suggest("장발")).body.tags[0]).toEqual({ name: "long_hair", category: 0, postCount: 900, body: "긴 머리.", keywords: ["헤어스타일", "긴 머리", "장발"] });
+  });
 });
+
+/** 한국어 단계별 질의가 처음 구현(모두 모아 정렬)과 같은 결과인지: 고정 검색어 + 키워드에서 뽑은 접두(1~3글자)와 전체. 비교한 질의 수 */
+async function compareKoreanWithReference(): Promise<number> {
+  const fixed = ["가", "머리", "장발", "미쿠", "교복", "흑발", "긴 머리", "고양이 귀", "레이무", "캐릭터", "작가", "포켓몬", "웃음", "블루 아카이브", "하츠네", "작품", "캐릭터를", "타마키"];
+  const sample = await sql<{ key: string }>`select key from tag_keyword where kind = 0 order by md5(key || tag_id) limit 80`.execute(env.db);
+  const qs = new Set(fixed);
+  for (const { key } of sample.rows) {
+    const ch = [...key];
+    for (const n of [1, 2, 3]) if (ch.length > n) qs.add(ch.slice(0, n).join(""));
+    qs.add(key);
+  }
+  let compared = 0;
+  for (const q of qs) {
+    if (!hasHangul(q)) continue;
+    const norm = q.trim().replace(/\s+/g, " ").toLowerCase(); // services/tags.ts suggest와 같게
+    const key = koKey(norm);
+    const contains = [...key].length >= 3 ? "%" + escapeLike(norm) + "%" : null;
+    const args = [key, escapeLike(key) + "%", contains, 20] as const;
+    expect(await repo.suggestKorean(env.db, ...args), q).toEqual(await repo.suggestKoreanReference(env.db, ...args));
+    compared++;
+  }
+  return compared;
+}
 
 describe.runIf(existsSync(NEW_CSV))("실제 새 CSV(mengod-hf)", () => {
   it("행 수, 분류, 키워드, 검색", { timeout: 300_000 }, async () => {
@@ -266,26 +301,28 @@ describe.runIf(existsSync(NEW_CSV))("실제 새 CSV(mengod-hf)", () => {
     expect((await names("교복"))[0]).toBe("school_uniform");
     expect((await names("^_^"))[0]).toBe("^_^");
 
-    // 한국어 단계별 질의가 처음 구현(모두 모아 정렬)과 같은 결과인지: 고정 검색어 + 키워드에서 뽑은 접두(1~3글자)와 전체
-    const fixed = ["가", "머리", "장발", "미쿠", "교복", "흑발", "긴 머리", "고양이 귀", "레이무", "캐릭터", "작가", "포켓몬", "웃음", "블루 아카이브", "하츠네", "작품", "캐릭터를", "타마키"];
-    const sample = await sql<{ key: string }>`select key from tag_keyword where kind = 0 order by md5(key || tag_id) limit 80`.execute(env.db);
-    const qs = new Set(fixed);
-    for (const { key } of sample.rows) {
-      const ch = [...key];
-      for (const n of [1, 2, 3]) if (ch.length > n) qs.add(ch.slice(0, n).join(""));
-      qs.add(key);
-    }
-    let compared = 0;
-    for (const q of qs) {
-      if (!hasHangul(q)) continue;
-      const norm = q.trim().replace(/\s+/g, " ").toLowerCase(); // services/tags.ts suggest와 같게
-      const key = koKey(norm);
-      const contains = [...key].length >= 3 ? "%" + escapeLike(norm) + "%" : null;
-      const args = [key, escapeLike(key) + "%", contains, 20] as const;
-      expect(await repo.suggestKorean(env.db, ...args), q).toEqual(await repo.suggestKoreanReference(env.db, ...args));
-      compared++;
-    }
-    expect(compared).toBeGreaterThan(150);
+    expect(await compareKoreanWithReference()).toBeGreaterThan(150);
+  });
+});
+
+describe.runIf(existsSync(NEW_CSV_1110))("실제 새 CSV(mengod-hf) 2026-11-10: 새 키워드 표기", () => {
+  it("행 수, 분류, 키워드, 검색", { timeout: 300_000 }, async () => {
+    const r = await importTags(env.db, { fileName: "danbooru-tags-kr-2026-11-10.csv", bytes: readFileSync(NEW_CSV_1110) });
+    expect(r.rows).toBe(152_801);
+    // 키워드가 없는 33행은 `<키워드>.`처럼 표시 뒤가 마침표뿐이다(NOTES 2026-11-19)
+    expect(r.stats).toMatchObject({ rows: 152_801, extraColumnRows: 0, withKeywords: 152_768, withOtherNames: 0, keywordRows: 887_726 });
+    const cats = await sql<{ category: number; n: string }>`select category, count(*) n from tag group by 1 order by 1`.execute(env.db);
+    expect(cats.rows.map((x) => [x.category, Number(x.n)])).toEqual([[0, 32_080], [1, 43_624], [3, 15_769], [4, 60_811], [5, 517]]);
+    const marks = await sql<{ n: string }>`select count(*) n from tag where body like '%<키워드>%' or body like '%키워드:%'`.execute(env.db);
+    expect(Number(marks.rows[0]!.n)).toBe(0);
+    expect((await names("long h"))[0]).toBe("long_hair");
+    expect((await names("긴 머리"))[0]).toBe("long_hair");
+    expect((await names("교복"))[0]).toBe("school_uniform");
+    expect((await names("여자 1명"))[0]).toBe("1girl");
+    expect((await suggest("여성 한명")).body.tags[0]).toMatchObject({ name: "1girl", body: "여성 캐릭터가 한 명 등장함.", keywords: ["인원", "여자 1명", "여성 한명"] });
+    expect((await names("^_^"))[0]).toBe("^_^");
+
+    expect(await compareKoreanWithReference()).toBeGreaterThan(150);
   });
 });
 

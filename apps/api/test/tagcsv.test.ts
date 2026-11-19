@@ -172,6 +172,55 @@ describe("readTagCsv 헤더 없는 형식 (mengod-hf)", () => {
   });
 });
 
+// 2026-11-10 통합본의 실제 행 모양: 키워드 표기가 `<키워드> 묶음, a, b.`로 바뀌었다(묶음 꺾쇠 없음, 끝에 마침표)
+const HEADERLESS_NEW = [
+  '1girl,0,8619766,"[인물 > 인원수] 여성 캐릭터가 한 명 등장함. <키워드> 인원, 여자 1명, 여성 한명."',
+  'school uniform,0,1083939,"[패션 > 의상] 학생들이 입는 교복의 총칭임. <키워드> 교복, 학생복."',
+  'nagase haruhito,1,683,"[작가] 나가세 하루히토(永瀬ハルヒト)라는 필명으로 그림을 그리는 작가. N-H라는 이름도 사용한다. <키워드> 나가세 하루히토, 永瀬ハルヒト, N-H."',
+  'loading (verjuice),1,217,"[작가 > 창작자] 로딩이라는 활동명을 사용하는 창작자. <키워드> 로딩, loading (verjuice), loading.."',
+  "c.c.,4,5898,[캐릭터 > 코드 기어스] 애니메이션 '코드 기어스'의 쿠데레 캐릭터이자 를르슈의 '공범'. <키워드> C.C.",
+  'one piece,3,56547,"[저작권 > 작품] 오다 에이치로 작가의 해적 모험 만화 및 애니메이션 시리즈임. <키워드> 원피스, 원피스."',
+  "horns,0,711610,[신체 > 뿔] 머리에 돋아난 단단하고 뾰족한 뿔임. <키워드>.",
+  'gengetsu chihiro,1,214,"[작가 > 창작자] 겐게츠 치히로라는 활동명을 사용하는 창작자. <키워드> 겐게츠 치히로, studio C.H."',
+  "",
+].join("\n");
+
+describe("readTagCsv 헤더 없는 형식: 새 키워드 표기 (2026-11-10부터)", () => {
+  const r = readTagCsv(HEADERLESS_NEW);
+  const by = new Map(r.records.map((x) => [x.name, x]));
+  it("표시 뒤를 키워드로, 끝 마침표 하나는 뗀다. 본문과 분류 표시는 옛 표기와 같게", () => {
+    expect(r.headerless).toBe(true);
+    expect(r.records).toHaveLength(8);
+    expect(by.get("1girl")).toMatchObject({ body: "여성 캐릭터가 한 명 등장함.", keywords: ["인원", "여자 1명", "여성 한명"] });
+    expect(by.get("school_uniform")!.keywords).toEqual(["교복", "학생복"]);
+    expect(by.get("nagase_haruhito")).toMatchObject({
+      body: "나가세 하루히토(永瀬ハルヒト)라는 필명으로 그림을 그리는 작가. N-H라는 이름도 사용한다.",
+      keywords: ["나가세 하루히토", "永瀬ハルヒト", "N-H"],
+    });
+  });
+  it("`..`로 끝나거나 태그 이름과 같은 키워드는 마침표를 두고, 그 밖은 원래 마침표여도 뗀다", () => {
+    expect(by.get("loading_(verjuice)")!.keywords).toEqual(["로딩", "loading (verjuice)", "loading.."]);
+    expect(by.get("c.c.")!.keywords).toEqual(["C.C."]);
+    expect(by.get("gengetsu_chihiro")!.keywords).toEqual(["겐게츠 치히로", "studio C.H"]);
+  });
+  it("뗀 뒤 앞 키워드와 겹치거나 비면 뺀다", () => {
+    expect(by.get("one_piece")!.keywords).toEqual(["원피스"]);
+    expect(by.get("horns")).toMatchObject({ body: "머리에 돋아난 단단하고 뾰족한 뿔임.", keywords: [] });
+  });
+  it("splitHeaderlessDescription: 두 표시가 다 있으면 뒤의 것, 새 표기에도 꺾쇠 묶음은 뗀다, 이름이 없으면 이름 규칙은 안 쓴다", () => {
+    expect(splitHeaderlessDescription("본문 키워드: a <키워드> b, c.")).toEqual({ body: "본문 키워드: a", keywords: ["b", "c"] });
+    expect(splitHeaderlessDescription("본문 <키워드> a 키워드: <b>, c")).toEqual({ body: "본문 <키워드> a", keywords: ["b", "c"] });
+    expect(splitHeaderlessDescription("[표정] 본문 <키워드> <a>, b.")).toEqual({ body: "본문", keywords: ["a", "b"] });
+    expect(splitHeaderlessDescription("본문 <키워드> C.C.")).toEqual({ body: "본문", keywords: ["C.C"] });
+    expect(splitHeaderlessDescription("본문 <키워드> C.C.", "c.c.")).toEqual({ body: "본문", keywords: ["C.C."] });
+    expect(splitHeaderlessDescription("본문 <키워드> a, .")).toEqual({ body: "본문", keywords: ["a"] });
+  });
+  it("헤더 있는 형식은 새 표기를 읽지 않는다", () => {
+    const old = readTagCsv('name,category,post_count,description\na,0,1,"본문 <키워드> x, y."\n');
+    expect(old.records[0]).toMatchObject({ body: "본문 <키워드> x, y.", keywords: [] });
+  });
+});
+
 describe("검색 키", () => {
   const [longHair, miku, , , voy] = readTagCsv(CSV4).records;
   it("영문 이름 키는 밑줄·공백을 빼고 소문자", () => {

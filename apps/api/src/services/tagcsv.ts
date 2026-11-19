@@ -2,6 +2,7 @@
 // 두 형식을 읽는다.
 // - 헤더 있는 형식: 열 이름으로 읽는다. 옛 danbooru-tags.csv는 헤더가 4열인데 뒤쪽 행이 이름 없는 다섯째 열(위키 other_names)을 가진다(NOTES Phase 5).
 // - 헤더 없는 형식(mengod-hf/danbooru-tags-kr): name,category,post_count,description 4열 고정. 이름의 밑줄이 공백으로 적혀 있다(NOTES 2026-11-08).
+//   키워드 표기는 `키워드: …`(11-04까지)와 `<키워드> ….`(11-10부터) 둘 다 읽는다(NOTES 2026-11-19).
 
 import { isSafeString } from "@wakaaka/core";
 
@@ -28,7 +29,7 @@ export interface TagRecord {
   postCount: number;
   /** CSV 원문 그대로 */
   description: string;
-  /** 설명에서 맨 앞 `[대분류 > 소분류]`와 끝의 `키워드: …`를 뗀 본문 */
+  /** 설명에서 맨 앞 `[대분류 > 소분류]`와 끝의 키워드(`키워드: …`, 헤더 없는 형식은 `<키워드> …`도)를 뗀 본문 */
   body: string;
   keywords: string[];
   otherNames: string[];
@@ -130,20 +131,52 @@ export const HEADERLESS_COLUMNS = ["name", "category", "post_count", "descriptio
 const SINGLE = /^\[([^\]>]+)\]\s*/;
 const GROUP_LABEL = /^<[^<>]*>$/;
 
+const NEW_KEYWORDS = "<키워드>";
+
 /**
  * 헤더 없는 형식(mengod-hf)의 설명 → 본문과 키워드. splitDescription에 더해 한 단계 표시 `[작가]`를 본문에서 떼고,
  * 키워드의 묶음 표시 `<교복>`은 꺾쇠만 떼어 키워드로 둔다(school_uniform의 `<교복>`처럼 그 태그의 이름인 경우가 많다. DESIGN 6절).
+ * 키워드 표기 둘을 모두 읽는다: `… 키워드: <묶음>, a, b`(11-04까지)와 `… <키워드> 묶음, a, b.`(11-10부터). 두 표시가 다 있으면 뒤의 것.
+ * 새 표기의 끝 마침표 규칙은 dropFinalPeriod. name은 태그 이름(밑줄 표기)이고 그 규칙에만 쓴다.
  * 헤더 있는 형식은 이 규칙을 쓰지 않는다(옛 CSV를 읽은 결과가 바뀌지 않게).
+ * 노드 저장소 `wakaaka_node/tagcsv.py`의 split_description과 같은 규칙이다(DESIGN 8절 "노드의 태그 인덱스").
  */
-export function splitHeaderlessDescription(description: string): { body: string; keywords: string[] } {
-  const s = splitDescription(description);
-  let body = s.body;
-  if (!DESC.test(description)) {
-    const m = SINGLE.exec(body);
-    if (m) body = body.slice(m[0].length).trim();
+export function splitHeaderlessDescription(description: string, name?: string): { body: string; keywords: string[] } {
+  let body = description;
+  const m = DESC.exec(body);
+  if (m) body = body.slice(m[0].length);
+  let keywords: string[] = [];
+  const kOld = body.lastIndexOf(KEYWORDS);
+  const kNew = body.lastIndexOf(NEW_KEYWORDS);
+  if (kOld >= 0 && kOld > kNew) {
+    keywords = splitList(body.slice(kOld + KEYWORDS.length), ",");
+    body = body.slice(0, kOld);
+  } else if (kNew >= 0) {
+    keywords = dropFinalPeriod(splitList(body.slice(kNew + NEW_KEYWORDS.length), ","), name);
+    body = body.slice(0, kNew);
   }
-  const keywords = s.keywords.map((k) => (GROUP_LABEL.test(k) ? k.slice(1, -1).trim() : k)).filter((k) => k !== "");
+  body = body.trim();
+  if (!m) {
+    const s = SINGLE.exec(body);
+    if (s) body = body.slice(s[0].length).trim();
+  }
+  keywords = keywords.map((k) => (GROUP_LABEL.test(k) ? k.slice(1, -1).trim() : k)).filter((k) => k !== "");
   return { body, keywords: [...new Set(keywords)] };
+}
+
+/**
+ * 새 표기는 끝에 마침표를 붙이되, 마지막 키워드가 이미 `.`로 끝나면 덧붙이지 않는다(`loading..`, `studio C.H.`).
+ * 그래서 마지막 키워드의 끝 마침표 하나를 떼되, `..`로 끝나거나 이름 키가 태그 이름과 같으면(`c.c.`의 `C.C.`) 둔다.
+ * 어느 쪽도 아니면 원래 마침표여도 뗀다(`studio C.H.` → `studio C.H`). 뗀 뒤 비거나 앞 키워드와 겹치면 뺀다.
+ * 11-04와 11-10을 대조해 고른 규칙이다(NOTES 2026-11-19).
+ */
+function dropFinalPeriod(keywords: string[], name: string | undefined): string[] {
+  const last = keywords.at(-1);
+  if (last === undefined || !last.endsWith(".") || last.endsWith("..")) return keywords;
+  if (name !== undefined && nameKey(last) === nameKey(name)) return keywords;
+  const head = keywords.slice(0, -1);
+  const cut = last.slice(0, -1).trim();
+  return cut === "" || head.includes(cut) ? head : [...head, cut];
 }
 
 export function readTagCsv(text: string): TagCsv {
@@ -235,7 +268,7 @@ function readHeaderless(first: { line: number; fields: string[] }, rest: Iterabl
     if (raw !== raw.trim() || / {2}|_/.test(raw)) throw new TagCsvError(line, `bad tag name ${JSON.stringify(raw)} (no header row: names use spaces for underscores)`);
     const name = raw.replaceAll(" ", "_");
     const { category, postCount } = checkRow(line, name, cat, pc, names);
-    const split = splitHeaderlessDescription(description);
+    const split = splitHeaderlessDescription(description, name);
     records.push({ name, category, postCount, description, body: split.body, keywords: split.keywords, otherNames: [], majorCategory: null, minorCategory: null });
   }
   return { header: [...HEADERLESS_COLUMNS], headerless: true, unknownColumns: [], extraColumnRows: 0, records };
