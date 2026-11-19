@@ -3,7 +3,7 @@
 # 웹 의존성(React, CodeMirror, vite)은 apps/web의 devDependencies라 실행 이미지의 npm ci --omit=dev에 들어가지 않는다.
 
 # ---------------------------------------------------------------- 1. 웹 빌드
-FROM node:22.23.3-alpine3.24 AS web
+FROM node:22.23.5-alpine3.24 AS web
 
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -20,7 +20,7 @@ COPY apps/web/public apps/web/public
 RUN npm run build -w @wakaaka/web
 
 # ---------------------------------------------------------------- 2. 실행
-FROM node:22.23.3-alpine3.24
+FROM node:22.23.5-alpine3.24
 
 WORKDIR /app
 ENV NODE_ENV=production
