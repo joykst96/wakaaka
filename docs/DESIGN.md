@@ -297,7 +297,7 @@ SELECT d.wildcard_id, d.hash, c.doc FROM deps d JOIN wc_content c USING (hash); 
 
 ### 설정과 그 밖의 규칙
 
-- **로컬/서버 모드와 서버 주소는 ComfyUI 설정에 둔다.** 노드 위젯이 아니다. 두 모드는 결과가 같으므로 워크플로마다 다를 이유가 없다. 테스트 때는 주소를 테스트 서버의 터널 주소나 LAN 주소(`http://<서버>:8490`)로 바꾼다.
+- **로컬/서버 모드와 서버 주소는 ComfyUI 설정에 둔다.** 노드 위젯이 아니다. 두 모드는 결과가 같으므로 워크플로마다 다를 이유가 없다. 테스트 때는 주소를 테스트 서버의 터널 주소로 바꾼다. 테스트 서버 앱은 `127.0.0.1:8490`에만 열려 있어 LAN 주소로는 닿지 않는다(10절 "운영 배포"). 터널 없이 쓰려면 `ssh -L 8490:127.0.0.1:8490 <서버>`로 잇고 `http://127.0.0.1:8490`을 넣는다.
   - 기본값은 서버 모드, `https://wakaaka.baepoyong.com`(사용자 결정, 2026-11-03. 2026-11-04 이 주소를 운영 주소로 정해 바꾸지 않는다). 주소는 http(s)만 받는다.
   - 훅은 요청한 사용자를 모르므로 `default` 사용자의 설정을 읽는다(`--multi-user`의 한계).
 - **유저 아이디(`Wakaaka.UserId`)와 작가 태그 `@`(`Wakaaka.ArtistAt`)도 ComfyUI 설정에 둔다**(2026-11-19). 유저 아이디는 하나만 받고(사용자 결정) 비밀번호는 받지 않는다. 모든 와일드카드가 공개이기 때문이다. 기본값은 빈 값이고 형식은 9절의 아이디 규칙(`[A-Za-z0-9_-]{3,32}`)이다. `Wakaaka.ArtistAt`은 기본 꺼짐이다.
@@ -373,7 +373,7 @@ ComfyUI 기본 여러 줄 문자열 노드처럼 텍스트를 받는다. 태그�
 - 속도 제한(2026-11-04). Cloudflare가 Free 플랜이라 속도 제한 규칙은 1개, 기간·차단 10초, 식에는 경로만 쓸 수 있다(메서드는 Business부터, `NOTES.md` Phase 6). 같은 경로를 읽기(GET)와 쓰기(PUT·DELETE)가 같이 쓰므로 쓰기는 앱에서 센다(사용자 결정). 읽기는 제한하지 않는다.
   - Cloudflare: `/api/auth/login`, `/api/auth/signup`, `/api/auth/password`에 IP당 10초 5회, 넘으면 10초 차단.
   - 앱(메모리, 프로세스 하나): 쓰기(`/api/` 아래 POST·PUT·DELETE. 로그아웃과 읽기용 POST인 `/api/lookup`·`/api/tags/lookup`은 뺀다) 계정당 1분 60회·IP당 1분 120회, 가입 IP당 1시간 5회, 로그인·비밀번호 변경 IP당 10분 30회(잠정). 넘으면 429 `E_RATE_LIMIT`과 `Retry-After`(초).
-  - IP는 `TRUST_CF_IP=1`이면 `CF-Connecting-IP`, 아니면 소켓 주소다. 운영은 앱이 `127.0.0.1`에만 열려 있어 터널(cloudflared)로만 들어오므로 이 헤더를 믿는다. 재시작하면 셈이 비워진다.
+  - IP는 `TRUST_CF_IP=1`이면 `CF-Connecting-IP`, 아니면 소켓 주소다. 운영과 테스트 서버는 앱이 `127.0.0.1`에만 열려 있어 터널(cloudflared)로만 들어오므로 이 헤더를 믿는다. 재시작하면 셈이 비워진다.
 - 입력과 출력의 인젝션 방어는 아래 "입력과 저장"을 따른다.
 - 노출: 둘러보기 목록이 있으므로 스팸이 노출을 노리고 올 수 있다. 다음으로 막는다.
   - 기본 정렬은 인기순이다. 좋아요가 없는 스팸은 위로 올라오지 않는다. "최신순"을 둔다면 기본값으로 하지 않는다.
@@ -437,9 +437,9 @@ ComfyUI 기본 여러 줄 문자열 노드처럼 텍스트를 받는다. 태그�
 
 | | 운영 | 테스트 |
 |---|---|---|
-| 주소 | `https://wakaaka.baepoyong.com` | 테스트 호스트 이름(터널), `http://<서버>:8490`(LAN) |
+| 주소 | `https://wakaaka.baepoyong.com` | 테스트 호스트 이름(터널). LAN에는 열지 않는다 |
 | 서버 폴더, compose 프로젝트 | `~/docker/wakaaka`, `wakaaka` | `~/docker/wakaaka-test`, `wakaaka-test` |
-| 앱 포트 | `127.0.0.1:8491` | `0.0.0.0:8490` |
+| 앱 포트 | `127.0.0.1:8491` | `127.0.0.1:8490` (2026-11-13에 서버에서 `0.0.0.0`에서 바뀜, 2026-11-19 저장소에 반영. compose 변수 `WAKAAKA_TEST_BIND`로 바꿀 수 있다) |
 | 보내는 것 | 커밋된 `HEAD`(`git archive`). 작업 트리가 깨끗하지 않으면 멈춘다 | 작업 트리(커밋하지 않은 변경 포함) |
 | DB | 볼륨 `wakaaka_db`. 시드 없음 | 볼륨 `wakaaka-test_db`. 예시 시드 |
 | 스크립트 | `deploy/prod-up.sh`, `prod-tags.sh`, `prod-admin.sh`, `prod-backup-pull.sh` | `deploy/test-up.sh`, `test-reset.sh`, `test-tags.sh` |
@@ -589,7 +589,7 @@ Impact Pack 와일드카드 노드(`ImpactWildcardProcessor`·`ImpactWildcardEnc
 | 단위·공통 테스트 세트 (TS) | 이 PC, vitest | 파서, 전개기, 하위 seed. DB 없음 | 매 변경마다 |
 | 공통 테스트 세트 (Python) | 이 PC, 포터블 `python_embeded` + 표준 `unittest` | TS와 같은 입력·seed·기대 출력 파일 | `core` 명세가 바뀔 때. 노드 단계부터 상시 |
 | API 통합 테스트 | 이 PC, Docker Desktop Postgres (`127.0.0.1`, tmpfs) | 재귀 CTE, 순환 검사, 가져오기(의존성 복사, 복사본 재사용), 묶음이 닫혀 있는지, 공격 입력(9절 "입력과 저장": U+0000, 짝 없는 서로게이트, 중복 키, `1e400`, `__proto__`, SQL 문자열, 모르는 필드, 남의 와일드카드 수정, 해시 충돌 모의) | API를 고칠 때. 테스트마다 스키마를 새로 만든다 |
-| 테스트 서버 | 서버 `~/docker/wakaaka-test`, LAN `http://<서버>:8490`, 테스트 호스트 이름의 터널 | 앱 전체 + Postgres | 기능 단위로 완성될 때 |
+| 테스트 서버 | 서버 `~/docker/wakaaka-test`, 테스트 호스트 이름의 터널(앱은 `127.0.0.1:8490`, LAN에는 열지 않음) | 앱 전체 + Postgres | 기능 단위로 완성될 때 |
 
 - 배포는 `deploy/test-up.sh`가 한다.
   1. `git ls-files` 기준으로 작업 트리를 tar로 묶어 ssh로 `~/docker/wakaaka-test/src`에 푼다. 커밋하지 않은 변경도 올라간다.

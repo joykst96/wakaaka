@@ -10,14 +10,15 @@
 
 ## 테스트 서버
 
-- 위치: 서버의 `~/docker/wakaaka-test` (compose 프로젝트 `wakaaka-test`), 포트 8490. 바깥에서는 Cloudflare Tunnel로 연다.
+- 위치: 서버의 `~/docker/wakaaka-test` (compose 프로젝트 `wakaaka-test`), 앱 `127.0.0.1:8490`(LAN에도 열지 않음). 바깥에서는 Cloudflare Tunnel로 연다.
 - `test-up.sh`: 작업 트리(`git ls-files` 기준, 커밋하지 않은 변경 포함)를 `~/docker/wakaaka-test/src`로 보낸 뒤 서버에서 빌드하고 띄운다.
 - `test-reset.sh`: DB 볼륨을 비우고 시드를 다시 넣는다. 끝에서 `test-tags.sh`를 부른다.
 - `test-tags.sh`: 태그 CSV(`WAKAAKA_TAGS_CSV`)를 `~/docker/wakaaka-test/data/`로 보내고(같은 해시면 건너뜀) 컨테이너 안에서 가져온다(같은 데이터 버전이면 건너뜀). CSV는 저장소에 넣지 않고, compose가 `data/`를 app의 `/data`에 읽기 전용으로 붙인다.
 - `test-defaults.sh <defaults.json>`: 미리 만든 기본 와일드카드 JSON(새 CSV용, `fixtures/tools/defaults2/`로 만듦)을 `data/defaults.json`으로 보내 전용 계정 `wakaaka`로 넣는다. 그 계정에 이미 와일드카드가 있으면 멈춘다(다시 넣으려면 `test-reset.sh`로 비운다).
-- 브라우저 확인은 터널 주소(HTTPS)로 한다. LAN 주소는 HTTP라 Secure 세션 쿠키가 남지 않는다.
+- 브라우저 확인은 터널 주소(HTTPS)로 한다. 터널 없이 API만 볼 때는 `ssh -L 8490:127.0.0.1:8490 <서버>`로 잇는다(HTTP라 Secure 세션 쿠키는 남지 않는다).
 
 환경 변수: `WAKAAKA_TEST_SSH`(필수), `WAKAAKA_TEST_DIR`(기본 `~/docker/wakaaka-test`), `WAKAAKA_TEST_PROJECT`(기본 `wakaaka-test`), `WAKAAKA_TEST_PORT`(기본 `8490`).
+compose 변수 `WAKAAKA_TEST_BIND`(기본 `127.0.0.1`)는 앱 포트를 여는 주소다. 스크립트는 이 값을 서버로 넘기지 않으므로, 다른 주소에 열려면 서버에서 직접 정해 띄운다.
 
 ## 이미지 (`Dockerfile`)
 

@@ -1,6 +1,6 @@
 # 테스트 서버 (서버 ~/docker/wakaaka-test). test-up.sh가 이 파일을 ~/docker/wakaaka-test/compose.yml로 복사한다.
 # .env(POSTGRES_PASSWORD)는 서버에서 처음 배포할 때 무작위로 만들고 저장소에는 두지 않는다.
-# Postgres는 내부 네트워크에만 두고 포트를 열지 않는다. app만 8490으로 연다.
+# Postgres는 내부 네트워크에만 두고 포트를 열지 않는다. app만 127.0.0.1:8490으로 연다(cloudflared 터널 전용).
 name: wakaaka-test
 
 services:
@@ -29,10 +29,10 @@ services:
       DATABASE_URL: postgres://wakaaka:${POSTGRES_PASSWORD}@postgres:5432/wakaaka
       PORT: "3000"
       HOST: 0.0.0.0
-      # 터널로 오는 요청의 IP. LAN 8490으로 오는 쪽도 이 헤더를 꾸밀 수 있지만 테스트 서버라 받아들인다(DESIGN 9절 "속도 제한")
+      # 터널로 오는 요청의 IP. 8490은 127.0.0.1에만 열려 있어 LAN에서 이 헤더를 꾸밀 수 없다(DESIGN 9절 "속도 제한")
       TRUST_CF_IP: "1"
     ports:
-      - "${WAKAAKA_TEST_PORT:-8490}:3000"
+      - "${WAKAAKA_TEST_BIND:-127.0.0.1}:${WAKAAKA_TEST_PORT:-8490}:3000"
     # 태그 CSV (test-tags.sh가 따로 보낸다. 저장소에 넣지 않는다)
     volumes:
       - ./data:/data:ro
