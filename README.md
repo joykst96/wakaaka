@@ -90,7 +90,7 @@ Docker 이미지 하나(API + 빌드한 웹)와 Postgres를 docker compose로 �
 
 ## 데이터
 
-- 태그 자동완성과 기본 와일드카드는 Danbooru 태그에 한국어 설명을 붙인 CSV로 만든다. 지금 쓰는 것은 Hugging Face [mengod-hf/danbooru-tags-kr](https://huggingface.co/datasets/mengod-hf/danbooru-tags-kr)의 `danbooru-tags-kr-2026-11-04.csv`(리비전 `e9092b08`, SHA-256 `6159f204…`)다. 이 CSV는 저장소에 넣지 않는다. 받아서 `data/`(git 무시)에 둔다.
+- 태그 자동완성과 기본 와일드카드는 Danbooru 태그에 한국어 설명을 붙인 CSV로 만든다. 지금 쓰는 것은 Hugging Face [mengod-hf/danbooru-tags-kr](https://huggingface.co/datasets/mengod-hf/danbooru-tags-kr)의 `danbooru-tags-kr-2026-11-10.csv`(리비전 `aa899ee8`, SHA-256 `5fc8783b…`)다. 기본 와일드카드는 그 전 파일 `danbooru-tags-kr-2026-11-04.csv`(리비전 `e9092b08`, SHA-256 `6159f204…`)로 만든 것이다. 이 CSV는 저장소에 넣지 않는다. 받아서 `data/`(git 무시)에 둔다.
   - 라이선스: 이 데이터셋의 한국어 번역·설명·분류·키워드는 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)이다. 그 밖의 출처(PYU224/tagdb-updater MIT, boorutan/booru-japanese-tag MIT, Danbooru 위키 등)는 데이터셋의 [LICENSE](https://huggingface.co/datasets/mengod-hf/danbooru-tags-kr/blob/main/LICENSE)를 따른다. 사이트에서는 문법 가이드 아래에 출처를 적는다.
   - 바꾼 점: 태그 이름의 공백을 Danbooru 표기(밑줄)로 되돌리고, 키워드 맨 앞의 `<묶음>` 표시는 꺾쇠를 떼어 키워드로 쓴다. 기본 와일드카드는 이 데이터의 분류로 묶은 것이라 설명에 출처와 라이선스를 적는다.
   - 전에 쓰던 별도 프로젝트 `danbooru-tag`의 `danbooru-tags.csv`(헤더 있는 형식)도 그대로 읽을 수 있다.
