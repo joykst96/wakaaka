@@ -264,7 +264,7 @@ SELECT d.wildcard_id, d.hash, c.doc FROM deps d JOIN wc_content c USING (hash); 
 
 ## 8. ComfyUI 노드
 
-노드는 둘이다. `Wakaaka Wildcard`(2026-11-03 확정)는 와일드카드 ID 하나를 전개한다. `Wakaaka Text`(2026-11-19 추가)는 자동완성이 붙는 여러 줄 텍스트를 전개한다. 바로 아래 표와 "동작"은 `Wakaaka Wildcard`의 것이고, `Wakaaka Text`는 이 절 끝에 따로 적는다.
+노드는 셋이다. `Wakaaka Wildcard`(2026-11-03 확정)는 와일드카드 ID 하나를 전개한다. `Wakaaka Text`(2026-11-19 추가)는 자동완성이 붙는 여러 줄 텍스트를 전개한다. `Wakaaka Text (Simple)`(2026-11-19 추가)은 `Wakaaka Text`와 같은 일을 하되 텍스트 칸과 seed만 보인다. 바로 아래 표와 "동작"은 `Wakaaka Wildcard`의 것이고, 두 텍스트 노드는 이 절 끝에 따로 적는다.
 
 | 위젯 | 내용 |
 |---|---|
@@ -345,9 +345,27 @@ ComfyUI 기본 여러 줄 문자열 노드처럼 텍스트를 받는다. 태그�
 - 난수 흐름은 SPEC 4.2 그대로다. 텍스트의 번호 p 선택지와 참조는 `H(seed, ["item:t", "pos:p"])`를 쓴다.
 - **`${X}` 하나뿐인 텍스트도 같은 seed의 `Wakaaka Wildcard`(ID X)와 결과가 다르다.** 같게 만드는 특례는 두지 않는다. 특례를 두면 `${X}`에 `, smile`만 붙여도 X 부분이 바뀐다. 웹 미리보기와 같은 결과가 필요하면 `Wakaaka Wildcard`를 쓴다.
 
+### 노드 `Wakaaka Text (Simple)` (2026-11-19, 사용자 요청)
+
+ComfyUI 기본 여러 줄 문자열 노드에 seed와 "생성 후 제어"만 붙은 모양이다. 하는 일은 `Wakaaka Text`와 같다. 노드 종류 이름은 `WakaakaTextSimple`이다.
+
+| 위젯 | 내용 |
+|---|---|
+| `text` | `Wakaaka Text`의 `text`와 같다(문법, 자동완성, `dynamicPrompts` 끔). |
+| `seed` | ComfyUI 표준 seed 위젯(생성 후 제어 포함) |
+| `result` | 숨긴 값. 큐에 넣을 때 전개 결과(최종 프롬프트)가 채워진다. |
+| `refs` | 숨긴 값. `Wakaaka Text`의 `refs`와 같다. |
+
+출력은 `text`(STRING) 하나다.
+
+- 화면에는 `text`와 `seed`(와 그 생성 후 제어)만 보인다. 결과 칸도, 노드 아래의 참조 정보 줄도 두지 않는다. 캔버스 렌더링과 Vue 노드 렌더링 모두에서 그렇다.
+- **기록은 `Wakaaka Text`와 같다.** `result`와 `refs`는 보이지 않을 뿐 위젯 값으로 있어서, 큐에 넣을 때 훅이 채우고 PNG의 워크플로와 실행 입력에 남는다(최종 프롬프트도 PNG에 남긴다는 결정을 따른다).
+- **같은 `text`와 같은 seed면 `Wakaaka Text`와 결과가 같다.** 전개 규칙(줄 주석, 이름 해석, 임시 루트 문서의 항목 id `t`, `maxDepth` 17, `latest-text/` 기록)을 그대로 쓴다. 두 노드를 바꿔 끼워도 프롬프트가 달라지지 않는다.
+- 전개 결과를 화면에서 보려면 출력을 문자열 표시 노드에 잇거나 `Wakaaka Text`를 쓴다. 이름을 못 찾았을 때 같은 문제는 큐에 넣을 때 노드 오류로만 알 수 있다.
+
 ### 노드의 자동완성 (2026-11-19, 사용자 결정)
 
-`Wakaaka Text`의 `text` 칸에만 붙는다. 규칙은 웹 편집기와 같게 한다(11절 편집 화면, 7절 태그 자동완성).
+`Wakaaka Text`와 `Wakaaka Text (Simple)`의 `text` 칸에만 붙는다. 규칙은 웹 편집기와 같게 한다(11절 편집 화면, 7절 태그 자동완성).
 
 - 태그: 뜨는 자리, 검색 순위, 삽입 규칙(밑줄 → 공백, 괄호 이스케이프 등)이 웹과 같다. `Wakaaka.ArtistAt`을 켜면 작가 태그(분류 1) 앞에 `@`를 붙여 넣는다.
 - 와일드카드: 닫히지 않은 `${` 뒤에서 뜬다. 후보는 설정된 유저 아이디의 와일드카드다. 대소문자 무시 부분 일치이고, 완전 일치 → 접두 → 그 밖, 같은 단계는 이름 순이다. 고르면 `${이름}`을 넣고 `refs`에 ID를 적는다. 유저 아이디가 비어 있으면 설정하라는 안내 한 줄을 보인다.
