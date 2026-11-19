@@ -353,7 +353,7 @@ ComfyUI 기본 여러 줄 문자열 노드에 seed와 "생성 후 제어"만 붙
 |---|---|
 | `text` | `Wakaaka Text`의 `text`와 같다(문법, 자동완성, `dynamicPrompts` 끔). |
 | `seed` | ComfyUI 표준 seed 위젯(생성 후 제어 포함) |
-| `result` | 숨긴 값. 큐에 넣을 때 전개 결과(최종 프롬프트)가 채워진다. |
+| `result` | 숨긴 값. 큐에 넣을 때 전개 결과(최종 프롬프트)가 채워진다. 한 줄 위젯으로 선언한다(여러 줄 위젯은 textarea라 숨김이 렌더링마다 다르다). 값은 여러 줄이어도 그대로 저장된다. |
 | `refs` | 숨긴 값. `Wakaaka Text`의 `refs`와 같다. |
 
 출력은 `text`(STRING) 하나다.
