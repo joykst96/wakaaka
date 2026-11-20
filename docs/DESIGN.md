@@ -302,6 +302,7 @@ SELECT d.wildcard_id, d.hash, c.doc FROM deps d JOIN wc_content c USING (hash); 
   - 훅은 요청한 사용자를 모르므로 `default` 사용자의 설정을 읽는다(`--multi-user`의 한계).
 - **유저 아이디(`Wakaaka.UserId`)와 작가 태그 `@`(`Wakaaka.ArtistAt`)도 ComfyUI 설정에 둔다**(2026-11-19). 유저 아이디는 하나만 받고(사용자 결정) 비밀번호는 받지 않는다. 모든 와일드카드가 공개이기 때문이다. 기본값은 빈 값이고 형식은 9절의 아이디 규칙(`[A-Za-z0-9_-]{3,32}`)이다. `Wakaaka.ArtistAt`은 기본 꺼짐이다.
 - **자동완성을 켜고 끄는 설정 둘**(2026-11-20, 사용자 결정): `Wakaaka.TagAutocomplete`(태그 자동완성)와 `Wakaaka.WildcardAutocomplete`(`${` 뒤의 와일드카드 자동완성). 둘 다 기본 켜짐이고 서로 독립이다. 다른 자동완성 확장과 함께 쓰는 일이 많아 태그 쪽을 끌 수 있게 하고, `${` 자동완성은 이 노드에만 있어서 따로 둔다. 자세한 동작은 "노드의 자동완성".
+- 설정의 화면 이름과 분류 이름에는 `@`, `{`, `}`를 쓰지 않는다. ComfyUI 프런트(1.57.4, 1.58.5 실측)가 설정 화면에서 이름을 i18n 메시지로 컴파일해서, 이 글자가 있으면 오류가 나고 그 항목이 화면에서 빠진다. 설명(tooltip)에는 써도 된다. `Wakaaka.ArtistAt`은 이름이 "작가 태그 앞에 @"였던 탓에 2026-11-19부터 설정 화면에 보이지 않았고, 2026-11-20에 이름을 바꿔 고쳤다.
 - 노드의 HTTP 요청은 자기 User-Agent(예: `wakaaka-comfy-node/<버전>`)를 보낸다. Python `urllib` 기본값 `Python-urllib/…`은 Cloudflare가 error 1010으로 막는다(`NOTES.md` Phase 2, 2026-11-03 실측).
 - 훅은 동기 함수이므로 네트워크 호출에 짧은 타임아웃(약 3초)을 두고 캐시를 먼저 본다. 서버에 연결할 수 없으면 캐시로 전환하고, 캐시도 없으면 노드에 "와일드카드를 찾을 수 없음: ID" 같은 분명한 오류를 낸다.
 - 이름 표시용 조회는 노드의 Python 경로(`/wakaaka/meta`)를 거친다. 브라우저에서 wakaaka 서버를 직접 부르면 CORS에 막힌다.
